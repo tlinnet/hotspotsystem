@@ -20,7 +20,72 @@ mkchilli() {
     else
         echo -e "\nSkipping"  
     fi
+}
 
+mkfixdate() {
+    echo -e "\nWe have to fix the date settings"
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        date
+        echo "uci set system.@system[0].zonename='UTC'"
+        echo "uci set system.@system[0].timezone='GMT0'"
+
+        uci set system.@system[0].zonename='UTC'
+        uci set system.@system[0].timezone='GMT0'
+        uci commit system
+        date
+    else
+        echo -e "\nSkipping"  
+    fi
+}
+
+mkfixnetstate() {
+    echo -e "\nWe have to fix a bug in /etc/hotplug.d/iface/00-netstate"
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        echo -e "\nFixing a bug in /etc/hotplug.d/iface/00-netstate"
+        cat /etc/hotplug.d/iface/00-netstate
+
+        # Carefull with these lines!
+        cat >> /etc/hotplug.d/iface/00-netstate << EOF
+
+[ ifdown = "\$ACTION" ] && {
+    uci_toggle_state network "\$INTERFACE" up 0
+}
+EOF
+        # Back again from EOF
+        cat /etc/hotplug.d/iface/00-netstate
+}
+
+mkchillihotplug() {
+    echo -e "\nThere is a default hotplug script in /etc/hotplug.d/iface/30-chilli"
+    cat /etc/hotplug.d/iface/30-chilli
+
+    echo -e "\nWe are going to replace it with a little more intelligent script."
+    echo -e "Taking care of both wan and wan2. You can always unplug your connection to the wan and wan2, to reach the router."
+    echo -e "This will disable the hotplug event."
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        echo -e "\nCopying over script"
+        echo -e "cp etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
+        # Copy over 30-chilli script
+        cp etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
+        #cp etc_hotplug_d_iface_30-chilli_original /etc/hotplug.d/iface/30-chilli
+    else
+        echo -e "\nSkipping"  
+    fi
 }
 
 mkchilliconf() {
@@ -76,25 +141,25 @@ mkchilliconf() {
 
         echo -e "\mMaking new crontab."
         #write out current crontab
-        crontab -l > old_crontab
-        touch old_crontab
-        cp old_crontab new_crontab
+        crontab -l > crontab_old
+        touch crontab_old
+        cp crontab_old crontab_new
         # At the 00'th and 30'th minute, each hour
-        echo "00,30 * * * * /root/hotspotsystem/uplink.sh" >> new_crontab
-        crontab new_crontab
+        echo "00,30 * * * * /root/hotspotsystem/uplink.sh" >> crontab_new
+        crontab crontab_new
         crontab -l
 
         # Get default from hotspotsystem
-        wget -O etc_init_d_chilli http://www.hotspotsystem.com/firmware/openwrt/chilli
-        wget -O etc_chilli_defaults.tmp http://hotspotsystem.com/firmware/openwrt/defaults
+        #wget -O hotspotsystem_etc_init_d_chilli http://www.hotspotsystem.com/firmware/openwrt/chilli
+        wget -O hotspotsystem_etc_chilli_defaults.tmp http://hotspotsystem.com/firmware/openwrt/defaults
 
-        DEFUAMSECRET=`cat etc_chilli_defaults.tmp | grep UAMSECRET | cut -d '"' -f2`
+        DEFUAMSECRET=`cat hotspotsystem_etc_chilli_defaults.tmp | grep UAMSECRET | cut -d '"' -f2`
         read -p "What is the UAMSECRET for the hotspot location? [$DEFUAMSECRET]:" UAMSECRET
         UAMSECRET=${UAMSECRET:-$DEFUAMSECRET}
         echo -e "You entered: $UAMSECRET"
         uci set chilli.@chilli[0].uamsecret="$UAMSECRET"
 
-        DEFRADIUSSECRET=`cat etc_chilli_defaults.tmp | grep RADSECRET | cut -d '"' -f2`
+        DEFRADIUSSECRET=`cat hotspotsystem_etc_chilli_defaults.tmp | grep RADSECRET | cut -d '"' -f2`
         read -p "What is the RADIUSSECRET for the hotspot location? [$DEFRADIUSSECRET]:" RADIUSSECRET
         RADIUSSECRET=${RADIUSSECRET:-$DEFRADIUSSECRET}
         echo -e "You entered: $RADIUSSECRET"
@@ -110,12 +175,12 @@ mkchilliconf() {
         uci set chilli.@chilli[0].radiuslocationid="1"
 
         # Radius parameters (change to the one for your provider)
-        RADIUS1=`cat etc_chilli_defaults.tmp | grep RADIUS= | cut -d"=" -f2`
+        RADIUS1=`cat hotspotsystem_etc_chilli_defaults.tmp | grep RADIUS= | cut -d"=" -f2`
         echo -e "\nSetting radius server"
         echo "uci set chilli.@chilli[0].radiusserver1=$RADIUS1"
         uci set chilli.@chilli[0].radiusserver1="$RADIUS1"
 
-        RADIUS2=`cat etc_chilli_defaults.tmp | grep RADIUS2= | cut -d"=" -f2`
+        RADIUS2=`cat hotspotsystem_etc_chilli_defaults.tmp | grep RADIUS2= | cut -d"=" -f2`
         echo "uci set chilli.@chilli[0].radiusserver2=$RADIUS2"
         uci set chilli.@chilli[0].radiusserver2="$RADIUS2"
 
@@ -213,9 +278,20 @@ mkchilliconf() {
 
         ## Finish
         uci commit chilli
+
+        echo -e "\nThe line 'option disabled '0' in '/etc/config/chilli' is not allowed at all!"
+        sed -i 's/option disabled/#option disabled/g' /etc/config/chilli
         uci show chilli
 
-        echo -e "\nNow try: /etc/init.d/chilli start"
+        echo -e "\nNOTE: You do NOT have to do: /etc/init.d/chilli enable"
+        echo -e "\nThere is a default hotplug script in /etc/hotplug.d/iface/30-chilli"
+        cat /etc/hotplug.d/iface/30-chilli
+
+        echo -e "\nYou can always unplug your connections to the wan and wan2, to reach the router."
+        echo -e "This will disable the hotplug event."
+
+        echo -e "\nNow trying: ash /etc/init.d/chilli start"
+        /etc/init.d/chilli start
 
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
@@ -225,9 +301,11 @@ mkchilliconf() {
     else
         echo -e "\nSkipping"  
     fi
-
 }
 
 # Perform
 mkchilli
+mkfixdate
+mkfixnetstate
+mkchillihotplug
 mkchilliconf
