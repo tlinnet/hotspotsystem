@@ -56,7 +56,7 @@ mksshwan() {
 
 # Sync syslog to papertrailapp.com
 mkpapertrail() {
-    cho -e "\nThis will Sync syslog to papertrailapp.com"
+    echo -e "\nThis will Sync syslog to papertrailapp.com"
     unset PERFORM
     read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
     PERFORM=${PERFORM:-$DEFPERFORM}
@@ -67,8 +67,8 @@ mkpapertrail() {
         PAPERURL=${PAPERURL:-$DEFPAPERURL}
         echo -e "You entered: $PAPERURL"
 
-        PAPERIP=`nslookup logs1.papertrailapp.com | grep -m 1 "Address: " | cut -d" " -f2`
-        cho -e "\nWhen I do a nslookup, I translate the IP to: $PAPERIP"
+        PAPERIP=`nslookup $PAPERURL | grep -m 1 "Address 1: " | cut -d" " -f3`
+        echo -e "\nWhen I do a nslookup, I translate the IP to: $PAPERIP"
 
         DEFPAPERPORT=10000
         read -p "What is the port number to your papertrail system? [$DEFPAPERPORT]:" PAPERPORT
