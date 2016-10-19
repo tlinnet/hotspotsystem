@@ -10,10 +10,10 @@ logger -t chilli "Chilli hotplug due to $ACTION of $INTERFACE ($DEVICE). WAN=${W
 
 dorestart() {
     ## Disable DHCP on LAN
-    #logger -t chilli "Starting chilli on br-lan and setting dhcp.lan.ignore='1'"
-    #uci set dhcp.lan.ignore='1'
-    #uci commit dhcp
-    #/etc/init.d/dnsmasq restart
+    logger -t chilli "Starting chilli on br-lan and setting dhcp.lan.ignore='1'"
+    uci set dhcp.lan.ignore='1'
+    uci commit dhcp
+    /etc/init.d/dnsmasq restart
 
     # Now restart
     /etc/init.d/chilli restart
@@ -32,10 +32,10 @@ if [ "$ACTION" == "ifup" ]; then
         fi
     elif [ "$INTERFACE" == "lan" ]; then
         ## Enable DHCP on LAN
-        #logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
-        #uci set dhcp.lan.ignore='0'
-        #uci commit dhcp
-        #/etc/init.d/dnsmasq restart
+        logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
+        uci set dhcp.lan.ignore='0'
+        uci commit dhcp
+        /etc/init.d/dnsmasq restart
 
     else
         logger -t chilli "Not starting chilli, since $INTERFACE is not wan or wan2"
@@ -53,10 +53,10 @@ elif [ "$ACTION" == "ifdown" ]; then
             dorestart
         else
             ## Enable DHCP on LAN
-            #logger -t chilli "Since neither wan or wan2 up, setting dhcp.lan.ignore='0'"
-            #uci set dhcp.lan.ignore='0'
-            #uci commit dhcp
-            #/etc/init.d/dnsmasq restart
+            logger -t chilli "Since neither wan or wan2 up, setting dhcp.lan.ignore='0'"
+            uci set dhcp.lan.ignore='0'
+            uci commit dhcp
+            /etc/init.d/dnsmasq restart
 
             /etc/init.d/chilli stop
             logger -t chilli "Neither wan or wan2 up. Stopping chilli."
