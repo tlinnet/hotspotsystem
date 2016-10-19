@@ -58,6 +58,9 @@ mkfixnetstate() {
         echo '[ ifdown = "$ACTION" ] && {' >> /etc/hotplug.d/iface/00-netstate
         echo '    uci_toggle_state network "$INTERFACE" up 0' >> /etc/hotplug.d/iface/00-netstate
         echo '}' >> /etc/hotplug.d/iface/00-netstate
+    else
+        echo -e "\nSkipping"  
+    fi
 }
 
 mkchillihotplug() {
