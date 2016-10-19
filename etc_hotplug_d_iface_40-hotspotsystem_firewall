@@ -4,8 +4,14 @@ CHILLINET=`uci get chilli.@chilli[0].net`
 LANNET=192.168.1.1
 USBNET=192.168.8.1
 MASK=255.255.255.0
+
+echo -e "\nTo enable"
 echo "iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
 echo "iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
+
+echo -e "\nTo disable"
+echo "iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
+echo "iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
 
 if [ "$ACTION" == "ifup" ]; then
     if [ "$INTERFACE" == "hotspotsystem" ]; then
@@ -14,8 +20,9 @@ if [ "$ACTION" == "ifup" ]; then
         logger -t firewall "iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
 
         # Disabling LANNET
-        #iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
-        #iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
+        iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
+        # Disabling USBNET
+        iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
@@ -24,7 +31,9 @@ elif [ "$ACTION" == "ifdown" ]; then
         logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
         logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
 
-        #iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
-        #iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
+        # Enabling LANNET
+        iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
+        # Enabling USBNET
+        iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
     fi
 fi
