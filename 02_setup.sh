@@ -32,6 +32,7 @@ mk4g() {
 # Allow SSH on wan zone
 mksshwan() {
     echo -e "\nThis will allow SSH on wan zone"
+    echo "Please read: https://wiki.openwrt.org/doc/howto/secure.access"
     unset PERFORM
     read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
     PERFORM=${PERFORM:-$DEFPERFORM}
