@@ -102,6 +102,9 @@ mkdhcpfile() {
         echo 'uci del_list dhcp.@dnsmasq[-1].server=37.235.1.177' >> $PIAFILES/down.sh
         echo 'uci commit dhcp
         echo '/etc/init.d/dnsmasq restart
+    else
+        echo -e "\nSkipping"
+    fi
 }
 
 mksettings() {
