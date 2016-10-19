@@ -22,5 +22,147 @@ mkopenvpn() {
     fi
 }
 
+# Get certificates for PIA Private Internet Access 
+mkcert() {
+    echo -e "\nThis will get certificates for PIA Private Internet Access "
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        mkdir -p /etc/openvpn/pia
+        curl -k -L https://www.privateinternetaccess.com/openvpn/openvpn.zip -o openvpn.zip
+        unzip openvpn.zip -d /etc/openvpn/pia
+        rm openvpn.zip
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
+# Function to create userpasswd file
+mkpasswdfile() {
+    echo -e "\nThis will create userpasswd file PIA Private Internet Access "
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        PIAFILES=/etc/openvpn/pia
+        PIAPASSFILE=userpass.txt
+        PIAUSERDEF=YOUR_PIA_USER
+        PIAPASSDEF=YOUR_PIA_PASS
+
+        read -p "Enter Your PIA user [$PIAUSERDEF]:" PIAUSER
+        PIAUSER=${PIAUSER:-$PIAUSERDEF}
+        echo "You entered: $PIAUSER"
+
+        read -p "Enter Your PIA passwd [$PIAPASSDEF]:" PIAPASS
+        PIAPASS=${PIAPASS:-$PIAPASSDEF}
+        echo "You entered: $PIAPASS"
+
+        # Make password file
+        echo $PIAUSER > ${PIAFILES}/${PIAPASSFILE}
+        echo $PIAPASS >> ${PIAFILES}/${PIAPASSFILE}
+        chmod 400 ${PIAFILES}/${PIAPASSFILE}
+        echo -e "\nYour PIA password file $PIAFILES/$PIAPASSFILE has the following content:"
+        cat ${PIAFILES}/${PIAPASSFILE}
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
+mkdhcpfile() {
+    echo -e "\nMake a DHCP option file. When connected to the VPN, your ISP DNS server will no longer work."
+    echo "This is because your IP address no longer belong to their own pool of accepted clients to their DNS servers."
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        PIAFILES=/etc/openvpn/pia
+
+        echo "" > $PIAFILES/up.sh
+        chmod +x $PIAFILES/up.sh
+        echo '#!/bin/ash' >> $PIAFILES/up.sh
+        echo '#uci add_list dhcp.@dnsmasq[-1].server=209.222.18.222' >> $PIAFILES/up.sh
+        echo '#uci add_list dhcp.@dnsmasq[-1].server=209.222.18.218' >> $PIAFILES/up.sh
+        echo 'uci add_list dhcp.@dnsmasq[-1].server=37.235.1.174' >> $PIAFILES/up.sh
+        echo 'uci add_list dhcp.@dnsmasq[-1].server=37.235.1.177' >> $PIAFILES/up.sh
+        echo 'uci commit dhcp' >> $PIAFILES/up.sh
+        echo '/etc/init.d/dnsmasq restart' >> $PIAFILES/up.sh
+
+        echo "" >  $PIAFILES/down.sh
+        chmod +x $PIAFILES/down.sh
+        echo '#!/bin/ash' >> $PIAFILES/down.sh
+        echo '#uci del_list dhcp.@dnsmasq[-1].server=209.222.18.222' >> $PIAFILES/down.sh
+        echo '#uci del_list dhcp.@dnsmasq[-1].server=209.222.18.218' >> $PIAFILES/down.sh
+        echo 'uci del_list dhcp.@dnsmasq[-1].server=37.235.1.174' >> $PIAFILES/down.sh
+        echo 'uci del_list dhcp.@dnsmasq[-1].server=37.235.1.177' >> $PIAFILES/down.sh
+        echo 'uci commit dhcp
+        echo '/etc/init.d/dnsmasq restart
+}
+
+mksettings() {
+    PIALOC=pia_vpn_setup
+    PIAFILES=/etc/openvpn/pia
+    PIAPASSFILE=userpass.txt
+    PIASETUPDEF=Denmark.ovpn
+
+    echo ""
+    read -p "Enter file name for settings [$PIASETUPDEF]:" PIASETUP
+    PIASETUP=${PIASETUP:-$PIASETUPDEF}
+
+    echo -e "\nNow reading settings from $PIASETUP"
+    PIAREMOTE=`grep "remote " $PIASETUP | sed "s/remote //g"`
+
+    uci set openvpn.${PIALOC}=openvpn
+    uci set openvpn.${PIALOC}.enabled='1'
+    uci set openvpn.${PIALOC}.remote="${PIAREMOTE}"
+    uci set openvpn.${PIALOC}.up=${PIAFILES}/up.sh
+    uci set openvpn.${PIALOC}.down=${PIAFILES}/down.sh
+    uci set openvpn.${PIALOC}.script_security='2'
+
+    # Set to 1
+    while read p; do
+        if [ `echo "$p" | wc -w` -eq 1 ]; then
+            pc=`echo $p | sed "s/-/_/g"`
+            if [ "$pc" == "comp_lzo" ]; then
+                uci set openvpn.${PIALOC}.${pc}='yes'
+            elif [ "$pc" == "disable_occ" ]; then
+                :
+            elif [ "$pc" == "auth_user_pass" ]; then
+                uci set openvpn.${PIALOC}.${pc}="$PIAFILES/$PIAPASSFILE"
+            else
+                uci set openvpn.${PIALOC}.${pc}='1'
+            fi
+        fi
+    done <$PIASETUP
+
+    # Set 2 settings
+    while read p; do
+        if [ `echo "$p" | wc -w` -eq 2 ]; then
+            IFS=' ' read -r -a pa <<< "$p"
+            pcf=`echo ${pa[0]} | sed "s/-/_/g"`
+            pcs=`echo ${pa[1]} | sed "s/-/_/g"`
+
+            if [[  ${pa[0]} =~ ^(crl-verify|ca)$ ]]; then
+                uci set openvpn.${PIALOC}.${pcf}=${PIAFILES}/${pcs}
+            else
+                uci set openvpn.${PIALOC}.${pcf}=${pcs}
+            fi
+        fi
+    done <$PIASETUP
+
+    uci commit openvpn
+    uci show openvpn | grep $PIALOC
+}
+
+
 # Perform
 mkopenvpn
+mkcert
+mkpasswdfile
+mkdhcpfile
+mksettings
