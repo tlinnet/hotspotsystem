@@ -8,21 +8,26 @@ MASK=255.255.255.0
 echo -e "\nTo enable"
 echo "iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
 echo "iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
+#echo "iptables -I INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT"
 
 echo -e "\nTo disable"
 echo "iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
 echo "iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
+#echo "iptables -D INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT"
 
 if [ "$ACTION" == "ifup" ]; then
     if [ "$INTERFACE" == "hotspotsystem" ]; then
         logger -t firewall "Firewall hotplug due to $ACTION of $INTERFACE ($DEVICE)."
         logger -t firewall "iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
         logger -t firewall "iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
+        #logger -t firewall "iptables -I INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT"
 
         # Disabling LANNET
         iptables -I FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
         # Disabling USBNET
         iptables -I FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
+        # Disabling access to internal network port ftp,ssh,telnet,www,https for hotspot clients
+        #iptables -I INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
@@ -30,10 +35,13 @@ elif [ "$ACTION" == "ifdown" ]; then
         logger -t firewall "Firewall hotplug DOWN due to $ACTION of $INTERFACE ($DEVICE)."
         logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT"
         logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT"
+        #logger -t firewall "iptables -D INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT"
 
         # Enabling LANNET
         iptables -D FORWARD -s ${CHILLINET} -d ${LANNET}/${MASK} -j REJECT
         # Enabling USBNET
         iptables -D FORWARD -s ${CHILLINET} -d ${USBNET}/${MASK} -j REJECT
+        # Enabling access to internal network port ftp,ssh,telnet,www,https for hotspot clients
+        #iptables -D INPUT -s ${CHILLINET} -p tcp -m multiport --dports 21,22,23,80,443 -j REJECT
     fi
 fi
