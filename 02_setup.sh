@@ -41,6 +41,7 @@ mksshwan() {
         read -p "What port to allow on wan? [$DEFPORT]:" PORT
         PORT=${PORT:-$DEFPORT}
         echo -e "You entered: $PORT"
+        echo -e "\nNow setting firewall"
         uci add firewall rule
         uci set firewall.@rule[-1].name='Allow-ssh-wan'
         uci set firewall.@rule[-1].src=wan
@@ -78,6 +79,9 @@ mkpapertrail() {
         uci set system.@system[0].log_ip=$PAPERIP
         uci set system.@system[0].log_port=$PAPERPORT
         uci commit system
+        echo -e "\nNow setting system"
+        echo -e "uci set system.@system[0].log_port=$PAPERPORT"
+        echo -e "uci set system.@system[0].log_ip=$PAPERIP"
     else
         echo -e "\nSkipping" 
     fi
