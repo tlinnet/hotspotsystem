@@ -214,6 +214,14 @@ mkchilliconf() {
         ## Finish
         uci commit chilli
         uci show chilli
+
+        echo -e "\nNow try: /etc/init.d/chilli start"
+
+        echo -e "\nCheck if it works with these commands"
+        echo -e "logread"
+        echo -e "ifconfig"
+        echo -e 'ls /var/run/chilli_*.conf'
+        echo -e 'Read more here: https://wiki.openwrt.org/doc/howto/wireless.hotspot.coova-chilli'
     else
         echo -e "\nSkipping"  
     fi
