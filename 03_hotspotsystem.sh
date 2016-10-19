@@ -18,7 +18,7 @@ mkchilli() {
         /etc/init.d/chilli stop
         /etc/init.d/chilli disable
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
     fi
 }
 
@@ -39,7 +39,7 @@ mkfixdate() {
         uci commit system
         date
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
     fi
 }
 
@@ -62,7 +62,7 @@ mkfixnetstate() {
         echo -e "\nNow it is /etc/hotplug.d/iface/00-netstate"
         cat /etc/hotplug.d/iface/00-netstate
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
     fi
 }
 
@@ -85,7 +85,30 @@ mkchillihotplug() {
         cp etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
         #cp etc_hotplug_d_iface_30-chilli_original /etc/hotplug.d/iface/30-chilli
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
+    fi
+}
+
+mkinterface() {
+    echo -e "\nWe are going to make an interface 'hotspotsystem' for the 'tun0' device"
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        HOTNETWORK=hotspotsystem
+        HOTTUN=tun0
+
+        uci show network
+        uci set network.${HOTNETWORK}=interface
+        uci set network.${HOTNETWORK}.proto='none'
+        uci set network.${HOTNETWORK}.ifname="$HOTTUN"
+        uci set network.${HOTNETWORK}.auto='1'
+        uci commit network
+        uci show network
+    else
+        echo -e "\nSkipping"
     fi
 }
 
@@ -305,7 +328,7 @@ mkchilliconf() {
         echo -e 'ls /var/run/chilli_*.conf'
         echo -e 'Read more here: https://wiki.openwrt.org/doc/howto/wireless.hotspot.coova-chilli'
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
     fi
 }
 
@@ -314,4 +337,5 @@ mkchilli
 mkfixdate
 mkfixnetstate
 mkchillihotplug
+mkinterface
 mkchilliconf
