@@ -54,15 +54,10 @@ mkfixnetstate() {
         echo -e "\nFixing a bug in /etc/hotplug.d/iface/00-netstate"
         cat /etc/hotplug.d/iface/00-netstate
 
-        # Carefull with these lines!
-        cat >> /etc/hotplug.d/iface/00-netstate << EOF
-
-[ ifdown = "\$ACTION" ] && {
-    uci_toggle_state network "\$INTERFACE" up 0
-}
-EOF
-        # Back again from EOF
-        cat /etc/hotplug.d/iface/00-netstate
+        echo "" >> /etc/hotplug.d/iface/00-netstate
+        echo '[ ifdown = "$ACTION" ] && {' >> /etc/hotplug.d/iface/00-netstate
+        echo '    uci_toggle_state network "$INTERFACE" up 0' >> /etc/hotplug.d/iface/00-netstate
+        echo '}' >> /etc/hotplug.d/iface/00-netstate
 }
 
 mkchillihotplug() {
