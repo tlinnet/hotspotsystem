@@ -45,12 +45,12 @@ mkchilliconf() {
         echo -e "You entered: $OPERATOR"
 
         DEFLOCID=1
-        read -p "What is 'Loc. ID' for the hotspot location? [$DEFOPERATOR]:" LOCID
+        read -p "What is 'Loc. ID' for the hotspot location? [$DEFLOCID]:" LOCID
         LOCID=${LOCID:-$DEFLOCID}
-        echo -e "You entered: $OPERATOR"
+        echo -e "You entered: $LOCID"
 
-        echo "uci set chilli.@hotspotsystem[0].radiusnasid=$OPERATOR_$LOCID"
-        uci set chilli.@hotspotsystem[0].radiusnasid="$OPERATOR_$LocID"
+        echo "uci set chilli.@hotspotsystem[0].radiusnasid=${OPERATOR}_${LOCID}"
+        uci set chilli.@hotspotsystem[0].radiusnasid="${OPERATOR}_${LOCID}"
 
         echo -e "\mMaking an uplink.sh script to hotspotsystem"
 
