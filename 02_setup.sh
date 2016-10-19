@@ -62,6 +62,11 @@ mkpapertrail() {
     PERFORM=${PERFORM:-$DEFPERFORM}
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
+        DEFPAPERPORT=10000
+        read -p "What is the port number to your papertrail system? [$DEFPAPERPORT]:" PAPERPORT
+        PAPERPORT=${PAPERPORT:-$DEFPAPERPORT}
+        echo -e "You entered: $PAPERPORT"
+
         DEFPAPERURL=logs1.papertrailapp.com
         read -p "What is the url to your papertrail system? [$DEFPAPERURL]:" PAPERURL
         PAPERURL=${PAPERURL:-$DEFPAPERURL}
@@ -69,11 +74,6 @@ mkpapertrail() {
 
         PAPERIP=`nslookup $PAPERURL | grep -m 1 "Address 1: " | cut -d" " -f3`
         echo -e "\nWhen I do a nslookup, I translate the IP to: $PAPERIP"
-
-        DEFPAPERPORT=10000
-        read -p "What is the port number to your papertrail system? [$DEFPAPERPORT]:" PAPERPORT
-        PAPERPORT=${PAPERPORT:-$DEFPAPERPORT}
-        echo -e "You entered: $PAPERPORT"
 
         uci set system.@system[0].log_ip=$PAPERIP
         uci set system.@system[0].log_port=$PAPERPORT
