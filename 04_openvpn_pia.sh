@@ -180,7 +180,7 @@ mksettings() {
         uci show openvpn | grep $PIALOC
 
         echo -e "\nNow trying: /etc/init.d/openvpn start"
-        //etc/init.d/openvpn start
+        /etc/init.d/openvpn start
 
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
