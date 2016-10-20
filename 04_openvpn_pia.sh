@@ -106,8 +106,8 @@ mkdhcpfile() {
         echo 'uci commit dhcp' >> $PIAFILES/down.sh
         echo '/etc/init.d/dnsmasq restart' >> $PIAFILES/down.sh
 
-        echo -e "\ncat of $PIAFILES/up.sh"
-        cat $PIAFILES/up.sh
+        echo -e "\ncat of $PIAFILES/down.sh"
+        cat $PIAFILES/down.sh
     else
         echo -e "\nSkipping"
     fi
