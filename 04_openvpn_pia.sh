@@ -187,6 +187,7 @@ mksettings() {
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
         echo -e "ifconfig"
+        echi -e "wget http://ipinfo.io/ip -qO -"
     else
         echo -e "\nSkipping"
     fi
