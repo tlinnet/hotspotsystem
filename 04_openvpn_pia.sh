@@ -83,7 +83,8 @@ mkdhcpfile() {
     if [ "$PERFORM" == "y" ]; then
         PIAFILES=/etc/openvpn/pia
 
-        echo "" > $PIAFILES/up.sh
+        rm -rf $PIAFILES/up.sh
+        touch $PIAFILES/up.sh
         chmod +x $PIAFILES/up.sh
         echo '#!/bin/ash' >> $PIAFILES/up.sh
         echo '#uci add_list dhcp.@dnsmasq[-1].server=209.222.18.222' >> $PIAFILES/up.sh
@@ -96,7 +97,8 @@ mkdhcpfile() {
         echo -e "\ncat of $PIAFILES/up.sh"
         cat $PIAFILES/up.sh
 
-        echo "" >  $PIAFILES/down.sh
+        rm -rf $PIAFILES/down.sh
+        touch  $PIAFILES/down.sh
         chmod +x $PIAFILES/down.sh
         echo '#!/bin/ash' >> $PIAFILES/down.sh
         echo '#uci del_list dhcp.@dnsmasq[-1].server=209.222.18.222' >> $PIAFILES/down.sh
