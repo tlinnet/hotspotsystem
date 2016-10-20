@@ -114,58 +114,76 @@ mkdhcpfile() {
 }
 
 mksettings() {
-    PIALOC=pia_vpn_setup
-    PIAFILES=/etc/openvpn/pia
-    PIAPASSFILE=userpass.txt
-    PIASETUPDEF=Denmark.ovpn
+    echo -e "\nMake a DHCP option file. When connected to the VPN, your ISP DNS server will no longer work."
+    echo "This is because your IP address no longer belong to their own pool of accepted clients to their DNS servers."
 
-    echo ""
-    read -p "Enter file name for settings [$PIASETUPDEF]:" PIASETUP
-    PIASETUP=${PIASETUP:-$PIASETUPDEF}
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        PIALOC=pia_vpn_setup
+        PIAFILES=/etc/openvpn/pia
+        PIAPASSFILE=userpass.txt
+        PIASETUPDEF=Denmark.ovpn
 
-    echo -e "\nNow reading settings from ${PIAFILES}/${PIASETUP}"
-    PIAREMOTE=`grep "remote " ${PIAFILES}/${PIASETUP} | sed "s/remote //g"`
+        echo ""
+        read -p "Enter file name for settings [$PIASETUPDEF]:" PIASETUP
+        PIASETUP=${PIASETUP:-$PIASETUPDEF}
 
-    uci set openvpn.${PIALOC}=openvpn
-    uci set openvpn.${PIALOC}.enabled='1'
-    uci set openvpn.${PIALOC}.remote="${PIAREMOTE}"
-    uci set openvpn.${PIALOC}.up=${PIAFILES}/up.sh
-    uci set openvpn.${PIALOC}.down=${PIAFILES}/down.sh
-    uci set openvpn.${PIALOC}.script_security='2'
+        echo -e "\nNow reading settings from ${PIAFILES}/${PIASETUP}"
+        PIAREMOTE=`grep "remote " ${PIAFILES}/${PIASETUP} | sed "s/remote //g"`
 
-    # Set to 1
-    while read p; do
-        if [ `echo "$p" | wc -w` -eq 1 ]; then
-            pc=`echo $p | sed "s/-/_/g"`
-            if [ "$pc" == "comp_lzo" ]; then
-                uci set openvpn.${PIALOC}.${pc}='yes'
-            elif [ "$pc" == "disable_occ" ]; then
-                :
-            elif [ "$pc" == "auth_user_pass" ]; then
-                uci set openvpn.${PIALOC}.${pc}="$PIAFILES/$PIAPASSFILE"
-            else
-                uci set openvpn.${PIALOC}.${pc}='1'
+        uci set openvpn.${PIALOC}=openvpn
+        uci set openvpn.${PIALOC}.enabled='1'
+        uci set openvpn.${PIALOC}.remote="${PIAREMOTE}"
+        uci set openvpn.${PIALOC}.up=${PIAFILES}/up.sh
+        uci set openvpn.${PIALOC}.down=${PIAFILES}/down.sh
+        uci set openvpn.${PIALOC}.script_security='2'
+
+        # Set to 1
+        while read p; do
+            if [ `echo "$p" | wc -w` -eq 1 ]; then
+                pc=`echo $p | sed "s/-/_/g"`
+                if [ "$pc" == "comp_lzo" ]; then
+                    uci set openvpn.${PIALOC}.${pc}='yes'
+                elif [ "$pc" == "disable_occ" ]; then
+                    :
+                elif [ "$pc" == "auth_user_pass" ]; then
+                    uci set openvpn.${PIALOC}.${pc}="$PIAFILES/$PIAPASSFILE"
+                else
+                    uci set openvpn.${PIALOC}.${pc}='1'
+                fi
             fi
-        fi
-    done <${PIAFILES}/${PIASETUP}
+        done <${PIAFILES}/${PIASETUP}
 
-    # Set 2 settings
-    while read p; do
-        if [ `echo "$p" | wc -w` -eq 2 ]; then
-            IFS=' ' read -r -a pa <<< "$p"
-            pcf=`echo ${pa[0]} | sed "s/-/_/g"`
-            pcs=`echo ${pa[1]} | sed "s/-/_/g"`
+        # Set 2 settings
+        while read p; do
+            if [ `echo "$p" | wc -w` -eq 2 ]; then
+                IFS=' ' read -r -a pa <<< "$p"
+                pcf=`echo ${pa[0]} | sed "s/-/_/g"`
+                pcs=`echo ${pa[1]} | sed "s/-/_/g"`
 
-            if [[  ${pa[0]} =~ ^(crl-verify|ca)$ ]]; then
-                uci set openvpn.${PIALOC}.${pcf}=${PIAFILES}/${pcs}
-            else
-                uci set openvpn.${PIALOC}.${pcf}=${pcs}
+                if [[  ${pa[0]} =~ ^(crl-verify|ca)$ ]]; then
+                    uci set openvpn.${PIALOC}.${pcf}=${PIAFILES}/${pcs}
+                else
+                    uci set openvpn.${PIALOC}.${pcf}=${pcs}
+                fi
             fi
-        fi
-    done <${PIAFILES}/${PIASETUP}
+        done <${PIAFILES}/${PIASETUP}
 
-    uci commit openvpn
-    uci show openvpn | grep $PIALOC
+        uci commit openvpn
+        uci show openvpn | grep $PIALOC
+
+        echo -e "\nNow trying: /etc/init.d/openvpn start"
+        //etc/init.d/openvpn start
+
+        echo -e "\nCheck if it works with these commands"
+        echo -e "logread"
+        echo -e "ifconfig"
+    else
+        echo -e "\nSkipping"
+    fi
 }
 
 
