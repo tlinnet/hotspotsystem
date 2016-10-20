@@ -93,6 +93,9 @@ mkdhcpfile() {
         echo 'uci commit dhcp' >> $PIAFILES/up.sh
         echo '/etc/init.d/dnsmasq restart' >> $PIAFILES/up.sh
 
+        echo -e "\ncat of $PIAFILES/up.sh"
+        cat $PIAFILES/up.sh
+
         echo "" >  $PIAFILES/down.sh
         chmod +x $PIAFILES/down.sh
         echo '#!/bin/ash' >> $PIAFILES/down.sh
@@ -100,8 +103,11 @@ mkdhcpfile() {
         echo '#uci del_list dhcp.@dnsmasq[-1].server=209.222.18.218' >> $PIAFILES/down.sh
         echo 'uci del_list dhcp.@dnsmasq[-1].server=37.235.1.174' >> $PIAFILES/down.sh
         echo 'uci del_list dhcp.@dnsmasq[-1].server=37.235.1.177' >> $PIAFILES/down.sh
-        echo 'uci commit dhcp
-        echo '/etc/init.d/dnsmasq restart
+        echo 'uci commit dhcp' >> $PIAFILES/down.sh
+        echo '/etc/init.d/dnsmasq restart' >> $PIAFILES/down.sh
+
+        echo -e "\ncat of $PIAFILES/up.sh"
+        cat $PIAFILES/up.sh
     else
         echo -e "\nSkipping"
     fi
