@@ -180,7 +180,69 @@ mksettings() {
         sed -i 's/aes_128_cbc/aes-128-cbc/g' /etc/config/openvpn
 
         uci show openvpn | grep $PIALOC
+    else
+        echo -e "\nSkipping"
+    fi
+}
 
+mkfirewall() {
+    echo -e "\Interface and firewall for openvpn."
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        # Make tun interface
+        PIANETWORK=pia_vpn
+        PIATUN=tun1
+
+        uci show network
+        uci set network.${PIANETWORK}=interface
+        uci set network.${PIANETWORK}.proto='none'
+        uci set network.${PIANETWORK}.ifname="$PIATUN"
+        uci set network.${PIANETWORK}.auto='1'
+        uci commit network
+        uci show network
+
+        # Add firewall zone
+        PIAFWZONE=vpn_fw
+
+        uci show firewall | grep zone
+        uci add firewall zone
+        uci set firewall.@zone[-1].name="$PIAFWZONE"
+        uci set firewall.@zone[-1].input='REJECT'
+        uci set firewall.@zone[-1].output='ACCEPT'
+        uci set firewall.@zone[-1].forward='REJECT'
+        uci set firewall.@zone[-1].masq='1'
+        uci set firewall.@zone[-1].mtu_fix='1'
+        uci set firewall.@zone[-1].network=$PIANETWORK
+        uci commit firewall
+        uci show firewall | grep zone
+
+        # Add forward from lan to zone
+        uci show firewall | grep forwarding
+        uci add firewall forwarding
+        uci set firewall.@forwarding[-1].dest="$PIAFWZONE"
+        uci set firewall.@forwarding[-1].src='lan'
+        uci commit firewall
+        uci show firewall | grep forwarding
+
+        # Restart firewall and stop openvpn service
+        /etc/init.d/firewall restart
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
+mkstartopenvpn() {
+    echo -e "\nStart openvpn?."
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
         echo -e "\nNow trying: /etc/init.d/openvpn start"
         /etc/init.d/openvpn start
 
@@ -193,10 +255,11 @@ mksettings() {
     fi
 }
 
-
 # Perform
 mkopenvpn
 mkcert
 mkpasswdfile
 mkdhcpfile
 mksettings
+mkfirewall
+mkstartopenvpn
