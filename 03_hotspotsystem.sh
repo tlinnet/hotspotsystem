@@ -167,7 +167,9 @@ mkchilliconf() {
         echo 'echo "Printing base information"' >> uplink.sh
         echo 'echo NASID=$NASID' >> uplink.sh
         echo 'echo WLAN=$WLAN WLANMAC=$WLANMAC' >> uplink.sh
+        echo 'uptime' >> uplink.sh
         echo 'echo UP=$UP' >> uplink.sh
+        ./uplink.sh
 
         echo -e "\mMaking new crontab."
         #write out current crontab
@@ -218,8 +220,10 @@ mkchilliconf() {
         WLAN=`ifconfig | grep wl | sort | head -1 | cut -d " " -f1`
         echo "Your wlan has interface: $WLAN"
         echo "But you could also use bridged lan 'br-lan', to support both LAN and wireless radio"
+        echo "See: https://help.hotspotsystem.com/knowledgebase/offer-hotspot-service-via-the-lan-ports-wired-connection"
+        echo "NOTE: Apparently, this setup will not work if you use br-lan and later user openvpn."
 
-        DEFDHCPIF='br-lan'
+        DEFDHCPIF="$WLAN"
         read -p "What is the interface DHCPIF for the hotspot location? [$DEFDHCPIF]:" DHCPIF
         DHCPIF=${DHCPIF:-$DEFDHCPIF}
         echo -e "You entered: $DHCPIF"
