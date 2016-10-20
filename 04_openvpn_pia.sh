@@ -171,7 +171,12 @@ mksettings() {
             fi
         done <${PIAFILES}/${PIASETUP}
 
+        # Commit changes
         uci commit openvpn
+
+        echo -e "\nThe cipher 'aes_128_cbc' is not allowed at all. It should be 'aes-128-cbc"
+        sed -i 's/aes_128_cbc/aes-128-cbc/g' /etc/config/openvpn
+
         uci show openvpn | grep $PIALOC
 
         echo -e "\nNow trying: /etc/init.d/openvpn start"
