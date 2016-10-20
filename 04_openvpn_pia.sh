@@ -114,8 +114,7 @@ mkdhcpfile() {
 }
 
 mksettings() {
-    echo -e "\nMake a DHCP option file. When connected to the VPN, your ISP DNS server will no longer work."
-    echo "This is because your IP address no longer belong to their own pool of accepted clients to their DNS servers."
+    echo -e "\nMake settings for openvpn and PIA setup."
 
     unset PERFORM
     read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
