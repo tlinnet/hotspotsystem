@@ -149,7 +149,8 @@ mkchilliconf() {
         echo -e "\mMaking an uplink.sh script to hotspotsystem"
 
         # Store this for uplink script
-        echo "" > uplink.sh
+        rm -rf uplink.sh
+        touch uplink.sh
         chmod +x uplink.sh
         echo  "#!/bin/bash" >> uplink.sh
         echo "NASID=${OPERATOR}_${LOCID}" >> uplink.sh
