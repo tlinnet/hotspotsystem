@@ -194,9 +194,15 @@ mkfirewall() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         # Make tun interface
+        PIALOC=pia_vpn_setup
         PIANETWORK=pia_vpn
         PIATUN=tun1
 
+        # Change the tun device in openvpn
+        uci set openvpn.${PIALOC}.dev="$PIATUN"
+        uci commit openvpn
+
+        # Now make network
         uci show network
         uci set network.${PIANETWORK}=interface
         uci set network.${PIANETWORK}.proto='none'
