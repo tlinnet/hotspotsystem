@@ -31,11 +31,9 @@ mkfixdate() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         date
-        echo "uci set system.@system[0].zonename='UTC'"
-        echo "uci set system.@system[0].timezone='GMT0'"
+        echo "uci set system.@system[0].timezone='UTC'"
 
-        uci set system.@system[0].zonename='UTC'
-        uci set system.@system[0].timezone='GMT0'
+        uci set system.@system[0].timezone='UTC'
         uci commit system
         date
     else
@@ -169,7 +167,16 @@ mkchilliconf() {
         echo 'echo WLAN=$WLAN WLANMAC=$WLANMAC' >> uplink.sh
         echo 'uptime' >> uplink.sh
         echo 'echo UP=$UP' >> uplink.sh
-        ./uplink.sh
+
+        unset PERFORM
+        read -p "Should I run the uplink.sh script now? [$DEFPERFORM]:" PERFORM
+        PERFORM=${PERFORM:-$DEFPERFORM}
+        echo -e "You entered: $PERFORM"
+        if [ "$PERFORM" == "y" ]; then
+            ./uplink.sh
+        else
+            echo -e "\nSkipping"
+        fi
 
         echo -e "\mMaking new crontab."
         #write out current crontab
@@ -178,8 +185,19 @@ mkchilliconf() {
         cp crontab_old crontab_new
         # At the 00'th and 30'th minute, each hour
         echo "00,30 * * * * /root/hotspotsystem/uplink.sh" >> crontab_new
-        crontab crontab_new
-        crontab -l
+        echo -e "\mThis is the new crontab."
+        cat crontab_new
+
+        unset PERFORM
+        read -p "Should I add this new crontab? [$DEFPERFORM]:" PERFORM
+        PERFORM=${PERFORM:-$DEFPERFORM}
+        echo -e "You entered: $PERFORM"
+        if [ "$PERFORM" == "y" ]; then
+            crontab crontab_new
+            crontab -l
+        else
+            echo -e "\nSkipping"
+        fi
 
         # Get default from hotspotsystem
         #wget -O hotspotsystem_etc_init_d_chilli http://www.hotspotsystem.com/firmware/openwrt/chilli
