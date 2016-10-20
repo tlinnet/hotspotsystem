@@ -144,7 +144,7 @@ mkchilliconf() {
         echo "uci set chilli.@chilli[0].radiusnasid=${OPERATOR}_${LOCID}"
         uci set chilli.@chilli[0].radiusnasid="${OPERATOR}_${LOCID}"
 
-        echo -e "\mMaking an uplink.sh script to hotspotsystem"
+        echo -e "\nMaking an uplink.sh script to hotspotsystem"
 
         # Store this for uplink script
         rm -rf uplink.sh
@@ -178,14 +178,14 @@ mkchilliconf() {
             echo -e "\nSkipping"
         fi
 
-        echo -e "\mMaking new crontab."
+        echo -e "\nMaking new crontab."
         #write out current crontab
         crontab -l > crontab_old
         touch crontab_old
         cp crontab_old crontab_new
         # At the 00'th and 30'th minute, each hour
         echo "00,30 * * * * /root/hotspotsystem/uplink.sh" >> crontab_new
-        echo -e "\mThis is the new crontab."
+        echo -e "\nThis is the new crontab."
         cat crontab_new
 
         unset PERFORM
