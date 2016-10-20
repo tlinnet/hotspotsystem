@@ -239,9 +239,10 @@ mkchilliconf() {
         echo "Your wlan has interface: $WLAN"
         echo "But you could also use bridged lan 'br-lan', to support both LAN and wireless radio"
         echo "See: https://help.hotspotsystem.com/knowledgebase/offer-hotspot-service-via-the-lan-ports-wired-connection"
-        echo "NOTE: Apparently, this setup will not work if you use br-lan and later user openvpn."
+        echo "NOTE: IF you are going to COMBINE openvpn AND coova-chilli, make sure that the tun interface for openvpn is started first!!."
+        echo "Or else there will be problems with the capture of the traffic from coova-chilli and redirecting."
 
-        DEFDHCPIF="$WLAN"
+        DEFDHCPIF="br-lan"
         read -p "What is the interface DHCPIF for the hotspot location? [$DEFDHCPIF]:" DHCPIF
         DHCPIF=${DHCPIF:-$DEFDHCPIF}
         echo -e "You entered: $DHCPIF"
