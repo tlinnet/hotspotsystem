@@ -186,7 +186,7 @@ mksettings() {
 }
 
 mkfirewall() {
-    echo -e "\Interface and firewall for openvpn."
+    echo -e "\nInterface and firewall for openvpn."
 
     unset PERFORM
     read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
