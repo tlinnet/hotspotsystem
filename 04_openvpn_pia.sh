@@ -123,8 +123,8 @@ mksettings() {
     read -p "Enter file name for settings [$PIASETUPDEF]:" PIASETUP
     PIASETUP=${PIASETUP:-$PIASETUPDEF}
 
-    echo -e "\nNow reading settings from $PIASETUP"
-    PIAREMOTE=`grep "remote " $PIASETUP | sed "s/remote //g"`
+    echo -e "\nNow reading settings from ${PIAFILES}/${PIASETUP}"
+    PIAREMOTE=`grep "remote " ${PIAFILES}/${PIASETUP} | sed "s/remote //g"`
 
     uci set openvpn.${PIALOC}=openvpn
     uci set openvpn.${PIALOC}.enabled='1'
