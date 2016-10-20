@@ -147,7 +147,7 @@ mksettings() {
                 uci set openvpn.${PIALOC}.${pc}='1'
             fi
         fi
-    done <$PIASETUP
+    done <${PIAFILES}/${PIASETUP}
 
     # Set 2 settings
     while read p; do
@@ -162,7 +162,7 @@ mksettings() {
                 uci set openvpn.${PIALOC}.${pcf}=${pcs}
             fi
         fi
-    done <$PIASETUP
+    done <${PIAFILES}/${PIASETUP}
 
     uci commit openvpn
     uci show openvpn | grep $PIALOC
