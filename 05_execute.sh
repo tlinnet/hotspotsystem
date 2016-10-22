@@ -10,8 +10,12 @@ rm -rf $OUT
 wget https://raw.githubusercontent.com/tlinnet/hotspotsystem/master/$IN  -O $OUT
 
 # See file commands
-echo -e "Content of: $OUT\n"
 CONTENT=`cat $OUT`
-echo $CONTENT
-logger -t cronexe "Cronexe script contains:\n $CONTENT"
+echo "Cronexe script contains:"
+echo "$CONTENT"
+
+logger -t cronexe "Cronexe script contains:"
+logger -t cronexe "$CONTENT"
+
+# Execute
 source $OUT
