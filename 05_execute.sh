@@ -12,5 +12,5 @@ wget https://raw.githubusercontent.com/tlinnet/hotspotsystem/master/$OUT
 echo -e "Content of: $OUT\n"
 CONTENT=`cat $OUT`
 echo $CONTENT
-logger -t cronexe "Cronexe script contains: $CONTENT"
+logger -t cronexe "Cronexe script contains:\n $CONTENT"
 source $OUT
