@@ -144,36 +144,14 @@ mkchilliconf() {
         echo "uci set chilli.@chilli[0].radiusnasid=${OPERATOR}_${LOCID}"
         uci set chilli.@chilli[0].radiusnasid="${OPERATOR}_${LOCID}"
 
-        echo -e "\nMaking an uplink.sh script to hotspotsystem"
-
-        # Store this for uplink script
-        rm -rf uplink.sh
-        touch uplink.sh
-        chmod +x uplink.sh
-        echo  "#!/bin/bash" >> uplink.sh
-        echo "NASID=${OPERATOR}_${LOCID}" >> uplink.sh
-        echo 'WLAN=`ifconfig | grep wl | sort | head -1 | cut -d " " -f1`' >> uplink.sh
-        echo 'WLANMAC=`ifconfig \$WLAN | awk '"'"'/HWaddr/ { print $5 }'"'"' | sed '"'"'s/:/-/g'"'"'`' >> uplink.sh
-        echo 'UP=`uptime|sed "s/ /\%20/g"|sed "s/:/\%3A/g"|sed "s/,/\%2C/g"`' >> uplink.sh
-        echo '/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=\$UP --output-document /tmp/up.result' >> uplink.sh
-        echo 'chmod 755 /tmp/up.result' >> uplink.sh
-        echo 'echo "Content of: /tmp/up.result"' >> uplink.sh
-        echo 'cat /tmp/up.result' >> uplink.sh
-        echo 'echo ""' >> uplink.sh
-        echo '/tmp/up.result'  >> uplink.sh
-        echo 'echo ""' >> uplink.sh
-        echo 'echo "Printing base information"' >> uplink.sh
-        echo 'echo NASID=$NASID' >> uplink.sh
-        echo 'echo WLAN=$WLAN WLANMAC=$WLANMAC' >> uplink.sh
-        echo 'uptime' >> uplink.sh
-        echo 'echo UP=$UP' >> uplink.sh
+        echo -e "\nI have an hotspotsystem_uplink.sh script to hotspotsystem"
 
         unset PERFORM
-        read -p "Should I run the uplink.sh script now? [$DEFPERFORM]:" PERFORM
+        read -p "Should I run the hotspotsystem_uplink.sh script now? [$DEFPERFORM]:" PERFORM
         PERFORM=${PERFORM:-$DEFPERFORM}
         echo -e "You entered: $PERFORM"
         if [ "$PERFORM" == "y" ]; then
-            ./uplink.sh
+            ./hotspotsystem_uplink.sh
         else
             echo -e "\nSkipping"
         fi
@@ -183,8 +161,9 @@ mkchilliconf() {
         crontab -l > crontab_old
         touch crontab_old
         cp crontab_old crontab_new
-        # At the 00'th and 30'th minute, each hour
-        echo "00,30 * * * * /root/hotspotsystem/uplink.sh" >> crontab_new
+        # At the 0-9 random minute, each hour
+        RAND=`grep -m1 -ao '[0-59]' /dev/urandom | sed s/0/10/ | head -n1`
+        echo "$RAND * * * * /root/hotspotsystem/hotspotsystem_uplink.sh" >> crontab_new
         echo -e "\nThis is the new crontab."
         cat crontab_new
 
@@ -358,7 +337,7 @@ mkchilliconf() {
 
 # Perform
 mkchilli
-mkfixdate
+#mkfixdate
 mkfixnetstate
 mkchillihotplug
 mkinterface
