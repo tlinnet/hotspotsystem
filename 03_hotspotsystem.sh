@@ -155,7 +155,7 @@ mkchilliconf() {
         echo 'WLAN=`ifconfig | grep wl | sort | head -1 | cut -d " " -f1`' >> uplink.sh
         echo 'WLANMAC=`ifconfig \$WLAN | awk '"'"'/HWaddr/ { print $5 }'"'"' | sed '"'"'s/:/-/g'"'"'`' >> uplink.sh
         echo 'UP=`uptime|sed "s/ /\%20/g"|sed "s/:/\%3A/g"|sed "s/,/\%2C/g"`' >> uplink.sh
-        echo '/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=tlinnet_4\&os_date=OpenWrt\&uptime=\$UP --output-document /tmp/up.result' >> uplink.sh
+        echo '/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=\$UP --output-document /tmp/up.result' >> uplink.sh
         echo 'chmod 755 /tmp/up.result' >> uplink.sh
         echo 'echo "Content of: /tmp/up.result"' >> uplink.sh
         echo 'cat /tmp/up.result' >> uplink.sh
