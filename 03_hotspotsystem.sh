@@ -78,10 +78,10 @@ mkchillihotplug() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         echo -e "\nCopying over script"
-        echo -e "cp etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
+        echo -e "cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
         # Copy over 30-chilli script
-        cp etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
-        #cp etc_hotplug_d_iface_30-chilli_original /etc/hotplug.d/iface/30-chilli
+        cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
+        #cp 03_etc_hotplug_d_iface_30-chilli_original /etc/hotplug.d/iface/30-chilli
     else
         echo -e "\nSkipping"
     fi
