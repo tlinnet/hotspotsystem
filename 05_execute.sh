@@ -4,9 +4,10 @@ UPTIME=`uptime`
 logger -t cronexe "Performing action at: $UPTIME"
 
 # Get commands
-OUT=06_execute.sh
+IN=06_execute.sh
+OUT=06_commands.sh
 rm -rf $OUT
-wget https://raw.githubusercontent.com/tlinnet/hotspotsystem/master/$OUT
+wget https://raw.githubusercontent.com/tlinnet/hotspotsystem/master/$IN  -O $OUT
 
 # See file commands
 echo -e "Content of: $OUT\n"
