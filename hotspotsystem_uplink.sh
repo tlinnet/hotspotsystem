@@ -3,7 +3,7 @@
 # Get hotspot info
 NASID=`uci get chilli.@chilli[0].radiusnasid`
 WLAN=`ifconfig | grep wl | sort | head -1 | cut -d " " -f1`
-WLANMAC=`ifconfig \$WLAN | awk '"'"'/HWaddr/ { print $5 }'"'"' | sed '"'"'s/:/-/g'"'"'`
+WLANMAC=`ifconfig $WLAN | awk '/HWaddr/ { print $5 }' | sed 's/:/-/g'`
 UPTIME=`uptime`
 UP=`echo $UPTIME | sed "s/ /\%20/g" | sed "s/:/\%3A/g" | sed "s/,/\%2C/g"`
 
