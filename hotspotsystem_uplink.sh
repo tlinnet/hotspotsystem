@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Get hotspot info
 NASID=`uci get chilli.@chilli[0].radiusnasid`
