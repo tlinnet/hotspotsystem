@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "Hello World echo"
-logger -t cronexe "Hello World logger"
+logger -t cronexe "Hello World logging"
