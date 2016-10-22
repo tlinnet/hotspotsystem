@@ -4,23 +4,25 @@
 NASID=`uci get chilli.@chilli[0].radiusnasid`
 WLAN=`ifconfig | grep wl | sort | head -1 | cut -d " " -f1`
 WLANMAC=`ifconfig \$WLAN | awk '"'"'/HWaddr/ { print $5 }'"'"' | sed '"'"'s/:/-/g'"'"'`
-UP=`uptime|sed "s/ /\%20/g"|sed "s/:/\%3A/g"|sed "s/,/\%2C/g"`
+UPTIME=`uptime`
+UP=`echo $UPTIME | sed "s/ /\%20/g" | sed "s/:/\%3A/g" | sed "s/,/\%2C/g"`
 
-echo "Printing base information"
-echo NASID=$NASID
-echo WLAN=$WLAN WLANMAC=$WLANMAC
-uptime
-echo UP=$UP
+echo "NASID=$NASID WLAN=$WLAN WLANMAC=$WLANMAC UPTIME=$UPTIME UP=$UP"
+logger -t uplink "NASID=$NASID WLAN=$WLAN WLANMAC=$WLANMAC UPTIME=$UPTIME UP=$UP"
 
 # Perform uplink, and get result
-/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=\$UP --output-document /tmp/up.result
+OUT=/tmp/up.result
+/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=\$UP --output-document $OUT
 
 # See file commands
-echo -e "Content of: /tmp/up.result\n"
-cat /tmp/up.result
+echo -e "Content of: $OUT\n"
+CONTENT=`cat $OUT`
+echo $CONTENT
+logger -t uplink "Uplink script returned: $CONTENT"
 
 # Execute possible commands
 chmod 755 /tmp/up.result
 /tmp/up.result
+rm -rf /tmp/up.result
 
 
