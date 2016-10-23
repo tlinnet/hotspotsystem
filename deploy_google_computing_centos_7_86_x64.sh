@@ -42,32 +42,36 @@ sudo adduser $MYUSER
 echo "${MYUSER}:${MYUSERPASS}" | sudo chpasswd
 sudo gpasswd -a $MYUSER wheel
 su $MYUSER
-mkdir ${HOME}/.ssh
-chmod 700 ${HOME}/.ssh
+ssh-keygen
+cp $HOME/.ssh/id_rsa.pub $HOME/.ssh/authorized_keys
 
 ###########################
 # From OpenWrt Router
 ###########################
 cd $HOME/.ssh
 MYUSER=demo
-GCIP=100.100.100.100
+GCIP=104.155.3.xxx
 
+#
 opkg update && opkg install sshtunnel
 /etc/init.d/sshtunnel stop
 /etc/init.d/sshtunnel disable
 
-# Create dropbear key and extract public
-dropbearkey -f id_dropbear -t rsa -s 2048
-dropbearkey -y -f id_dropbear > id_dropbear.pub
+# Copy over key, and then access
+mkdir -p ${HOME}/.ssh
+chmod 700 ${HOME}/.ssh
+scp ${MYUSER}@${GCIP}:/home/${MYUSER}/.ssh/id_rsa ${HOME}/.ssh/id_rsa
 
-# Copy over public key, and then access
-scp id_dropbear.pub ${MYUSER}@${GCIP}:/home/${MYUSER}/.ssh/authorized_keys
-
-ssh -y ${MYUSER}@${GCIP}
+# Try access
+ssh -v ${MYUSER}@${GCIP}
 
 #####################################
 # From cmd of Google Cloud Instance.
 #####################################
+
+# See log
+journalctl -u sshd |tail -100
+
 # Remove password access
 F='/etc/ssh/sshd_config'
 
@@ -79,34 +83,21 @@ sudo systemctl restart sshd
 ###########################
 # From OpenWrt Router
 ###########################
-
-
-cat /etc/config/sshtunnel
-cp /etc/config/sshtunnel /etc/config/sshtunnel_orig
-
 MYUSER=demo
-GCIP=100.100.100.100
-LOCAL=`uci get network.lan.ipaddr`
-uci set sshtunnel.rssh=tunnelR
-uci set sshtunnel.rssh.server='Google Cloud'
-uci set sshtunnel.rssh.remoteaddress=${GCIP}
-uci set sshtunnel.rssh.remoteport='22'
-uci set sshtunnel.rssh.user=${MYUSER}
-uci set sshtunnel.rssh.localaddress=$LOCAL
-uci set sshtunnel.rssh.localport='50022'
+GCIP=104.155.3.xxx
 
-uci commit sshtunnel
-uci show sshtunnel
-/etc/init.d/sshtunnel start
+ssh -fN -R 7000:localhost:50022 ${MYUSER}@${GCIP}
+echo $HOST
+ps | grep 'ssh -fN'
 logread
 
 #####################################
 # From cmd of Google Cloud Instance.
 #####################################
 journalctl -u sshd |tail -100
+ssh root@localhost -p 7000
 
-MYUSER=demo
-GCIP=100.100.100.100
-ssh -y -p 22 ${MYUSER}@localhost
+
+##### THIS WORKS! . :)
 
 
