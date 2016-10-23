@@ -144,14 +144,14 @@ mkchilliconf() {
         echo "uci set chilli.@chilli[0].radiusnasid=${OPERATOR}_${LOCID}"
         uci set chilli.@chilli[0].radiusnasid="${OPERATOR}_${LOCID}"
 
-        echo -e "\nI have an hotspotsystem_uplink.sh script to hotspotsystem"
+        echo -e "\nI have an 03_hotspotsystem_uplink.sh script to hotspotsystem"
 
         unset PERFORM
-        read -p "Should I run the hotspotsystem_uplink.sh script now? [$DEFPERFORM]:" PERFORM
+        read -p "Should I run the 03_hotspotsystem_uplink.sh script now? [$DEFPERFORM]:" PERFORM
         PERFORM=${PERFORM:-$DEFPERFORM}
         echo -e "You entered: $PERFORM"
         if [ "$PERFORM" == "y" ]; then
-            ./hotspotsystem_uplink.sh
+            ./03_hotspotsystem_uplink.sh
         else
             echo -e "\nSkipping"
         fi
@@ -163,7 +163,7 @@ mkchilliconf() {
         cp crontab_old crontab_new
         # At the 0-9 random minute, each hour
         RAND=`grep -m1 -ao '[0-59]' /dev/urandom | sed s/0/10/ | head -n1`
-        echo "$RAND * * * * /root/hotspotsystem/hotspotsystem_uplink.sh" >> crontab_new
+        echo "$RAND * * * * /root/hotspotsystem/03_hotspotsystem_uplink.sh" >> crontab_new
         echo -e "\nThis is the new crontab."
         cat crontab_new
 
