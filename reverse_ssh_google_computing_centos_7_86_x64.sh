@@ -86,6 +86,10 @@ sudo systemctl restart sshd
 MYUSER=demo
 GCIP=104.155.3.xxx
 
+# -f Requests ssh to go to background just before command execution. This is useful if ssh is going to ask for passwords or passphrases, but the user wants it in the background.  This implies -n.
+# -N :Do not execute a remote command.  This is useful for just forwarding ports (protocol version 2 only).
+# -R : -R [bind_address:]port:host:hostport. Specifies that the given port on the remote (server) host is to be forwarded to the given host and port on the local side.
+
 ssh -fN -R 7000:localhost:50022 ${MYUSER}@${GCIP}
 echo $HOST
 ps | grep 'ssh -fN'
