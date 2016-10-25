@@ -4,8 +4,8 @@ UPTIME=`uptime`
 logger -t cronexe "Performing action at: $UPTIME"
 
 # Get commands
-IN=06_execute_script.sh
-OUT=06_script.sh
+IN=wget_execute_script.sh
+OUT=wget_script.sh
 rm -rf $OUT
 wget https://raw.githubusercontent.com/tlinnet/hotspotsystem/master/$IN  -O $OUT
 
