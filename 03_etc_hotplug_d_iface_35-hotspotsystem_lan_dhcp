@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# Count if up
+PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+echo "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
+
+if [ "$ACTION" == "ifup" ]; then
+    if [ "$INTERFACE" == "hotspotsystem" ]; then
+        logger -t chilli "hotspotsystem interface is up."
+
+        if [ "$PROCESSCOUNT" == "0" ]; then
+            logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
+        else
+            logger -t chilli "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
+            logger -t chilli "Setting dhcp.lan.ignore='1'"
+
+            ## Disable DHCP on LAN
+            uci set dhcp.lan.ignore='1'
+            uci commit dhcp
+            /etc/init.d/dnsmasq restart
+        fi
+    fi
+
+elif [ "$ACTION" == "ifdown" ]; then
+    if [ "$INTERFACE" == "hotspotsystem" ]; then
+         ## Enable DHCP on LAN
+        logger -t chilli "hotspotsystem interface is down, setting dhcp.lan.ignore='0'"
+        uci set dhcp.lan.ignore='0'
+        uci commit dhcp
+        /etc/init.d/dnsmasq restart
+    fi
+fi
