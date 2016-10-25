@@ -15,5 +15,6 @@ else
     logger -t connection "I will perform a 'reboot' now!!!"
 
     # Reboot
+    /bin/sleep 3
     /sbin/reboot
 fi
