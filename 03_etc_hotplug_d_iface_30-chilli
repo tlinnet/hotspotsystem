@@ -9,12 +9,6 @@ if [ -z "$WAN2UP" ]; then WAN2UP=0; fi
 logger -t chilli "Chilli hotplug due to $ACTION of $INTERFACE ($DEVICE). WAN=${WANIF},${WANUP} WAN2=${WAN2IF},${WAN2UP}"
 
 dorestart() {
-    ## Disable DHCP on LAN
-    logger -t chilli "Starting chilli on br-lan and setting dhcp.lan.ignore='1'"
-    uci set dhcp.lan.ignore='1'
-    uci commit dhcp
-    /etc/init.d/dnsmasq restart
-
     # Now restart
     /etc/init.d/chilli restart
 }
@@ -30,6 +24,7 @@ if [ "$ACTION" == "ifup" ]; then
         else
             dorestart
         fi
+
     elif [ "$INTERFACE" == "lan" ]; then
         ## Enable DHCP on LAN
         logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
@@ -51,12 +46,8 @@ elif [ "$ACTION" == "ifdown" ]; then
                 logger -t chilli "WAN2UP=$WAN2UP"
             fi
             dorestart
+
         else
-            ## Enable DHCP on LAN
-            logger -t chilli "Since neither wan or wan2 up, setting dhcp.lan.ignore='0'"
-            uci set dhcp.lan.ignore='0'
-            uci commit dhcp
-            /etc/init.d/dnsmasq restart
 
             /etc/init.d/chilli stop
             logger -t chilli "Neither wan or wan2 up. Stopping chilli."
