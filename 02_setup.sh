@@ -88,6 +88,30 @@ mkpapertrail() {
     fi
 }
 
+# Many syslog messages of the format "DHCPV6 SOLICIT IA_NA from ..."
+mkpapertrail() {
+    echo -e "\nThis will remove syslog messages of the format 'DHCPV6 SOLICIT IA_NA from ...'"
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        # https://wiki.openwrt.org/doc/techref/odhcpd#many_syslog_messages_of_the_format_dhcpv6_solicit_ia_na_from
+        # get the current setting for dhcpv6 in /etc/config/dhcp
+        uci get dhcp.lan.dhcpv6
+        uci set dhcp.lan.dhcpv6=disabled
+        uci commit
+        uci get dhcp.lan.dhcpv6
+        /etc/init.d/odhcpd restart
+        echo -e "\nNow setting system"
+        echo -e "uci set dhcp.lan.dhcpv6=disabled"
+        echo -e "uci commit"
+        echo -e "/etc/init.d/odhcpd restart"
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
 # Perform
 mk4g
 mksshwan
