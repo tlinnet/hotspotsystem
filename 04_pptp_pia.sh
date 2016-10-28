@@ -146,7 +146,7 @@ mkstartpptp() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         echo -e "\nNow trying: ifup pia_pptp"
-        /etc/init.d/openvpn start
+        ifup pia_pptp
 
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
