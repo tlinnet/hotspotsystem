@@ -89,7 +89,7 @@ mkpapertrail() {
 }
 
 # Many syslog messages of the format "DHCPV6 SOLICIT IA_NA from ..."
-mkpapertrail() {
+dhcpv6disabled() {
     echo -e "\nThis will remove syslog messages of the format 'DHCPV6 SOLICIT IA_NA from ...'"
     unset PERFORM
     read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
@@ -116,3 +116,4 @@ mkpapertrail() {
 mk4g
 mksshwan
 mkpapertrail
+dhcpv6disabled
