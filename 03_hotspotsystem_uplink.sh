@@ -21,8 +21,8 @@ echo $CONTENT
 logger -t uplink "Uplink script returned: $CONTENT"
 
 # Execute possible commands
-chmod 755 /tmp/up.result
-/tmp/up.result
+#chmod 755 /tmp/up.result
+#/tmp/up.result
 rm -rf /tmp/up.result
 
 
