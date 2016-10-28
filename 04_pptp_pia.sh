@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DEFPERFORM=y
-# Install packages for openvpn
+# Install packages for pptp
 mkpptp() {
     echo -e "\nThis will install packages for PPTP"
     unset PERFORM
