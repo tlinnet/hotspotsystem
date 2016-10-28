@@ -90,13 +90,17 @@ mkinterface() {
         echo -e "\nNow reading settings from ${PIAFILES}/${PIASETUP}"
         PIAREMOTE=`grep "remote " ${PIAFILES}/${PIASETUP} | sed "s/remote //g" | cut -d " " -f1`
 
+        echo -e "\nNow reading user/pass settings from ${PIAFILES}/${PIAPASSFILE}"
+        PIAUSER=`cat ${PIAFILES}/${PIAPASSFILE} | awk 'NR==1'`
+        PIAPASS=`cat ${PIAFILES}/${PIAPASSFILE} | awk 'NR==2'`
 
         # Now make network
         uci show network
         uci set network.${PIANETWORK}=interface
         uci set network.${PIANETWORK}.ifname="$PIAIF"
         uci set network.${PIANETWORK}.proto='pptp'
-
+        uci set network.${PIANETWORK}.username="$PIAUSER"
+        uci set network.${PIANETWORK}.password="$PIAPASS"
         uci set network.${PIANETWORK}.server="$PIAREMOTE"
         uci set network.${PIANETWORK}.buffering='1'
         uci set network.${PIANETWORK}.auto='1'
@@ -133,9 +137,30 @@ mkinterface() {
     fi
 }
 
+mkstartpptp() {
+    echo -e "\nStart PPTP?."
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        echo -e "\nNow trying: ifup pia_pptp"
+        /etc/init.d/openvpn start
+
+        echo -e "\nCheck if it works with these commands"
+        echo -e "logread"
+        echo -e "ifconfig"
+        echo -e "wget http://ipinfo.io/ip -qO -"
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
 
 # Perform
 mkpptp
 mkcert
 mkpasswdfile
 mkinterface
+mkstartpptp
