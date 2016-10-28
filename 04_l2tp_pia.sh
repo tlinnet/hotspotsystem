@@ -102,7 +102,7 @@ mkinterface() {
         uci set network.${PIANETWORK}.username="$PIAUSER"
         uci set network.${PIANETWORK}.password="$PIAPASS"
         uci set network.${PIANETWORK}.server="$PIAREMOTE"
-        uci set network.${PIANETWORK}.auto='0'
+        uci set network.${PIANETWORK}.auto='1'
         uci commit network
         uci show network
 
