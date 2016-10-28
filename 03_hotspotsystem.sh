@@ -277,9 +277,9 @@ mkchilliconf() {
         uci set chilli.@chilli[0].uamanydns='1'
 
         ## Is not set. Change so default: http://1.0.0.1 will goto login page
-        #uci set chilli.@chilli[0].uamaliasip='1.0.0.1'
+        uci set chilli.@chilli[0].uamaliasip='1.0.0.1'
         ## Set so http://login will goto login page
-        #uci set chilli.@chilli[0].uamaliasname='login'
+        uci set chilli.@chilli[0].uamaliasname='login'
         ## Is not set. Change so default: http://1.0.0.0 will logout
         ##uci set chilli.@chilli[0].uamlogoutip='1.0.0.0'
         ## no success page, to original requested URL
