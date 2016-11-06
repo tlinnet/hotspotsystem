@@ -12,7 +12,7 @@ logger -t uplink "NASID=$NASID WLAN=$WLAN WLANMAC=$WLANMAC UPTIME=$UPTIME UP=$UP
 
 # Perform uplink, and get result
 OUT=/tmp/up.result
-/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=\$UP --output-document $OUT
+/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=$WLANMAC\&nasid=$NASID\&os_date=OpenWrt\&uptime=$UP --output-document $OUT
 
 # See file commands
 echo -e "Content of: $OUT\n"
