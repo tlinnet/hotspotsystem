@@ -33,6 +33,11 @@ def main():
                       dest="vouchers_flag",
                       default=False,
                       help="Use the GET /vouchers or GET /locations/{locationId}/vouchers API")
+    parser.add_option("-g", "--generate",
+                      action="store_true",
+                      dest="generate_flag",
+                      default=False,
+                      help="Use the GET /locations/{locationId}/generate/voucher API")
 
     (options, args) = parser.parse_args()
 
@@ -56,15 +61,21 @@ def main():
         if options.id == None:
             api_vouchers(root=root2, headers=headers)
         else:
-            api_locations_locationId_vouchersv1(root=root1, headers=headers, id=options.id)
-            #api_locations_locationId_vouchersv2(root=root2, headers=headers, id=options.id)
+            api_locations_locationId_vouchers_v1(root=root1, headers=headers, id=options.id)
+            #api_locations_locationId_vouchers_v2(root=root2, headers=headers, id=options.id)
+
+    if options.generate_flag:
+        if options.id == None:
+            parser.error("Please supply the location ID where the voucher credit will be deducted from with -i option.")
+        else:
+            api_locations_locationId_generate_voucher_v1(root=root1, headers=headers, id=options.id)
 
 
 def api_me(root=None, headers=None):
     print("Use the GET /me API")
     url = root + '/me'
     r = requests.get(url, headers=headers)
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
@@ -75,7 +86,7 @@ def api_locations_options(root=None, headers=None):
     print("Use the GET /locations/options API")
     url = root + '/locations/options'
     r = requests.get(url, headers=headers)
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
@@ -86,7 +97,7 @@ def api_locations(root=None, headers=None):
     print("Use the GET /locations API")
     url = root + '/locations'
     r = requests.get(url, headers=headers)
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
@@ -98,7 +109,7 @@ def api_vouchers(root=None, headers=None):
     print("Use the GET /vouchers API")
     url = root + '/vouchers'
     r = requests.get(url, headers=headers)
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
@@ -106,40 +117,52 @@ def api_vouchers(root=None, headers=None):
         print v
 
 
-def api_locations_locationId_vouchersv1(root=None, headers=None, id=None):
+def api_locations_locationId_vouchers_v1(root=None, headers=None, id=None):
     print("GET /locations/{locationId}/vouchers for id:%s"%id)
     url = root + '/locations/' + id + '/vouchers.json'
     print url
     r = requests.get(url, auth=(headers['sn-apikey'], 'x'))
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     #print("The content for json is:")
     print r.json().keys()
     print r.json()['metadata']
-    #print r.json()
-    #for v in r.json()['results']:
-    #    print v
+    for v in r.json()['results']:
+        print v
 
 
-def api_locations_locationId_vouchersv2(root=None, headers=None, id=None):
+def api_locations_locationId_vouchers_v2(root=None, headers=None, id=None):
     print("GET /locations/{locationId}/vouchers for id:%s"%id)
     url = root + '/locations/' + id + '/vouchers'
     print url
     params = {'locationId': id}
     r = requests.get(url, headers=headers, params=params)
-    #print("Status code is: %s")%(r.status_code)    
+    #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
     print r.json().keys()
     print r.json()['metadata']
-    #for v in r.json()['items']:
-    #    print v
+    for v in r.json()['items']:
+        print v
 
 
-
-
+def api_locations_locationId_generate_voucher_v1(root=None, headers=None, id=None):
+    print("GET /locations/{locationId}/generate/voucher for id:%s"%id)
+    url = root + '/locations/' + id + '/generate/voucher.json'
+    print url
+    # package ID of a custom package which is used to define the voucher parameters.
+    # If no package is specified, a voucher code will be generated based on the default free access of the location.
+    params = {'package': 7}
+    r = requests.get(url, auth=(headers['sn-apikey'], 'x'), params=params)
+    print("Status code is: %s")%(r.status_code)
+    #print("The headers are:")
+    #print r.headers
+    print("The content for json is:")
+    print r.json().keys()
+    print r.json()
+    print r.json()['access_code']
 
 
 if __name__ == '__main__':
