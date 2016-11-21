@@ -10,6 +10,7 @@ key="$1"
 # Defaults
 FLAGVOUCHER=0
 FLAGGENERATE=0
+FLAGJSON=0
 
 case $key in
     -k|--key)
@@ -25,6 +26,9 @@ case $key in
     ;;
     -g|--generate)
     FLAGGENERATE=1
+    ;;
+    -j|--json)
+    FLAGJSON=1
     ;;
     *)
             # unknown option
@@ -55,6 +59,7 @@ fi
 # Define variables
 ROOT1='https://api.hotspotsystem.com/v1.0'
 ROOT2='https://api.hotspotsystem.com/v2.0'
+ROOTJ='http://localhost:3000'
 
 #Write functions
 function api_vouchers {
@@ -127,10 +132,8 @@ fi
 if [ "$FLAGGENERATE" -eq "1" ]; then
     echo 1
     if [ -z "$ID" ]; then
-        echo 2
         echo ERROR: "Please supply the location ID where the voucher credit will be deducted from with -i option." 1>&2
     else
-        echo "jhe"
         api_locations_locationId_generate_voucher_v1 $ROOT1
     fi
 fi
