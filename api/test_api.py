@@ -115,6 +115,8 @@ def api_vouchers(root=None, headers=None):
     print("The content for json is:")
     for v in r.json()['items']:
         print v
+    print r.json().keys()
+    print r.json()['metadata']
 
 
 def api_locations_locationId_vouchers_v1(root=None, headers=None, id=None):
@@ -125,11 +127,14 @@ def api_locations_locationId_vouchers_v1(root=None, headers=None, id=None):
     #print("Status code is: %s")%(r.status_code)
     #print("The headers are:")
     #print r.headers
-    #print("The content for json is:")
+    print("The content for json is:")
+    for v in r.json()['results']:
+        # Possible keys
+        # voucher_code, validity, price_enduser, usage_exp
+        # serial, simultaneous_use,limit_dl, limit_ul, limit_tl
+        print "Code: %11s, Validity:%8d min/H, price: %4s, Time left: %4s" % (v['voucher_code'], v['validity'], v['price_enduser'], v['usage_exp'])
     print r.json().keys()
     print r.json()['metadata']
-    for v in r.json()['results']:
-        print v
 
 
 def api_locations_locationId_vouchers_v2(root=None, headers=None, id=None):
@@ -142,10 +147,10 @@ def api_locations_locationId_vouchers_v2(root=None, headers=None, id=None):
     #print("The headers are:")
     #print r.headers
     print("The content for json is:")
-    print r.json().keys()
-    print r.json()['metadata']
     for v in r.json()['items']:
         print v
+    print r.json().keys()
+    print r.json()['metadata']
 
 
 def api_locations_locationId_generate_voucher_v1(root=None, headers=None, id=None):
