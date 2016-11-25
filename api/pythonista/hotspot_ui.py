@@ -1,3 +1,41 @@
+###############################################################################
+#                                                                             #
+#                           Hotspotsystem Vouchers                            #
+#                                                                             #
+#               View current free vouchers and create new vouchers            #
+#                                                                             #
+#                             by Troels Schwarz-Linnet                        #
+#                                                                             #
+###############################################################################
+#                                                                             #
+#                                   Licence                                   #
+#                                                                             #
+# Copyright (C) 2016  Troels Schwarz-Linnet, Denmark                          #
+#                                                                             #
+# Contact: tlinnet *at* gmail dot com                                         #
+#                                                                             #
+# Available at:                                                               #
+# https://github.com/tlinnet/hotspotsystem/tree/master/api/pythonista         #
+#                                                                             #
+#  Inspired by: https://github.com/khilnani/pythonista-scripts/blob/          #
+#  master/thirdparty/UI/ui-tutorial/Three-Column-Sortable-TableView.py        #
+#                                                                             #
+#                                                                             #
+# This program is free software; you can redistribute it and/or modify        #
+# it under the terms of the GNU General Public License as published by        #
+# the Free Software Foundation, either version 3 of the License, or           #
+# (at your option) any later version.                                         #
+#                                                                             #
+# This program is distributed in the hope that it will be useful,             #
+# but WITHOUT ANY WARRANTY; without even the implied warranty of              #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the               #
+# GNU Library General Public License for more details.                        #
+#                                                                             #
+# You should have received a copy of the GNU General Public License           #
+# along with this program; if not, write to the Free Software                 #
+#                                                                             #
+###############################################################################
+
 import platform, os, datetime, logging, sys, os, json, requests
 from operator import itemgetter
 from time import strftime
