@@ -1,0 +1,26 @@
+#!/bin/sh
+
+turn_off() {
+    logger -t led "Led turn off due to $ACTION of $INTERFACE ($DEVICE)"
+    echo "Turn off trigger"
+    for p in `find /sys/devices/platform/leds-gpio/leds -name trigger`; do
+        echo $p
+        echo none > $p
+    done
+
+    echo ""
+    echo "Set 0 as brightness"
+    for p in `find /sys/devices/platform/leds-gpio/leds -name brightness`; do
+        echo $p
+        echo 0 > $p
+    done
+}
+
+if [ "$ACTION" == "ifup" ]; then
+    echo "ifup for $INTERFACE ($DEVICE)"
+    if [ "$INTERFACE" == "wan" ]; then
+        turn_off
+    elif [ "$INTERFACE" == "wan2" ]; then
+        turn_off
+    fi
+fi
