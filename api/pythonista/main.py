@@ -78,7 +78,8 @@ else:
 
 # Import pythonista specific modules
 if ispythonista:
-    import ui, console
+    import ui, console, dialogs
+    from objc_util import *
     console.clear()
     # Disable dimming the screen
     console.set_idle_timer_disabled(True)
@@ -106,13 +107,22 @@ class Common(object):
         else:
             logging.log(FINE, 'Configuration file missing')
             config = {}
-            config['limit'] = "100"
-            config['offset'] = "0"
-            config['last_voucher'] = ""
-            config['last_voucher_time'] = ""
-            config['reset'] = True
-            config['error_message'] = None
-            config['success'] = None
+
+        list_configs = [
+        ['limit', "100"],
+        ['offset', "0"],
+        ['last_voucher', ""],
+        ['last_voucher_time', ""],
+        ['reset', True],
+        ['error_message', None],
+        ['success', None],
+        ['package_filter', ""]
+        ]
+
+        # Set key and value if missing in config dict
+        for key, val in list_configs:
+            if key not in config:
+                config[key] = val
 
         # Store
         self.config = config
@@ -120,14 +130,22 @@ class Common(object):
         self.write_configuration()
 
     # Read vouchers from config dict
-    def read_vouchers(self):
+    def read_vouchers(self, full=False):
         if 'stored_vouchers' in self.config:
-            return self.config['stored_vouchers']
+            if full:
+                return self.config['stored_vouchers']
+            else:
+                sublist = [item[:3] for item in self.config['stored_vouchers']]
+                return sublist
         else:
             self.get_vouchers()
             success = self.get_config(key='success')
             if success:
-                return self.config['stored_vouchers']
+                if full:
+                    return self.config['stored_vouchers']
+                else:
+                    sublist = [item[:3] for item in self.config['stored_vouchers']]
+                    return sublist
             else:
                 return []
 
@@ -140,25 +158,31 @@ class Common(object):
         vouchers = []
         i = 0
 
+        # Get search_criteria
+        criteria = self.get_config(key='package_filter')
+
         # Get success
         success = r.json()['success']
         self.config['success'] = success
         if success:
             for v in r.json()['results']:
                 ct = v['voucher_code'].split("-")[0]
-                if "p" in ct:
+                if criteria not in ct:
                     continue
-                vouchers.append(("%03d"%i, v['voucher_code'], v['usage_exp']))
+                # voucher_code, usage_exp, validity, price_enduser, 
+                # serial, simultaneous_use,limit_dl, limit_ul, limit_tl
+                vouchers.append(("%03d"%i, v['voucher_code'], v['usage_exp'], v['validity'], v['price_enduser'], v['serial'], v['simultaneous_use'], v['limit_dl'], v['limit_ul'], v['limit_tl']))
                 i += 1
             # Store and save
             self.config['stored_vouchers'] = vouchers
             self.config['error_message'] = None
-            self.write_configuration()
 
         # If no success, store the error message
         else:
             self.config['error_message'] = r.json()['error']['message']
-            self.write_configuration()
+        
+        # Write
+        self.write_configuration()
 
     # Read the last generated voucher from dict
     def read_last_voucher(self):
@@ -166,6 +190,23 @@ class Common(object):
             return (self.config['last_voucher_time'], self.config['last_voucher'])
         else:
             return ("---", "---")
+
+    # Make a string for last voucher
+    def get_generated_voucher_string(self):
+        string = """
+-------  Hotspotsystem Voucher  -------
+
+You have to activate the card before
+first use. After activation the same
+code can be used as the 'Username' 
+and 'Password' to log in.
+
+Generated: %s
+
+Code:      %s
+
+        """ % self.read_last_voucher()
+        return string
 
     # Use hotspotsystem API to generate voucher
     def generate_voucher(self):
@@ -225,6 +266,24 @@ if ispythonista:
             self.background_color = 'white'
             #self.tv.delegate = MyTableViewDelegate()
 
+            # Create TextView 1 and 2
+            self.txtv_1 = ui.TextView()
+            self.txtv_1.alignment = ui.ALIGN_CENTER
+            self.txtv_1.editable = False
+            self.txtv_1.font = ("AmericanTypewriter-Bold", 12)
+
+            self.txtv_2 = ui.TextView()
+            self.txtv_2.alignment = ui.ALIGN_CENTER
+            self.txtv_2.editable = False
+            self.txtv_2.font = ("AmericanTypewriter-Bold", 16)
+
+            # Store text to view
+            self.refresh_last_voucher()
+
+            # Add the TextView
+            self.add_subview(self.txtv_1)
+            self.add_subview(self.txtv_2)
+
             # Define buttons and create the sub_views
             self.btn_1 = self.make_buttons('Index', True) #Name
             self.btn_2 = self.make_buttons('Code', True) #Size
@@ -234,6 +293,7 @@ if ispythonista:
             self.btn_4 = self.make_buttons('Refresh table', False)
             self.btn_5 = self.make_buttons('Generate', False)
             self.btn_6 = self.make_buttons('Settings', False)
+            self.btn_7 = self.make_buttons('Print', False)
 
             # Create a tableview, with data
             self.tv = ui.TableView()
@@ -249,39 +309,31 @@ if ispythonista:
             # Add the table
             self.add_subview(self.tv)
 
-            # Create TextView 1 and 2
-            self.txtv_1 = ui.TextView()
-            self.txtv_1.alignment = ui.ALIGN_CENTER
-            self.txtv_1.editable = False
-            self.txtv_1.font = ("AmericanTypewriter-Bold", 12)
-
-            self.txtv_2 = ui.TextView()
-            self.txtv_2.alignment = ui.ALIGN_CENTER
-            self.txtv_2.editable = False
-            self.txtv_2.font = ("AmericanTypewriter-Bold", 16)
-
-            self.refresh_last_voucher()
-
-            # Add the TextView
-            self.add_subview(self.txtv_1)
-            self.add_subview(self.txtv_2)
-
-            # Show
+            # Show: http://omz-software.com/pythonista/docs/ios/ui.html#ui.View.present
             self.present('full_screen')
+            #self.present(hide_title_bar=True)
+            #self.present(hide_title_bar=True, animated=False)
+
 
         # Do setup of config dictionary
         def setup_configuration(self):
             if self.c.get_config(key='reset'):
                 #logging.info('Get your API key from the hotspotsystem website')
-                API_KEY = console.input_alert("API Key", "from hotspotsystem", "", "OK")
+                return_dict = dialogs.form_dialog(title='Input to hotspotsystem', fields=[
+                    {'key':'API_KEY','type':'password','title':'API Key','value': ""},
+                    {'key':'LOC_ID','type':'number','title':'Location id nr [Loc. ID]','value':'1'},
+                    {'key':'package','type':'number','title':'Voucher package id nr','value':'1'},
+                ], sections=None)
+
+                API_KEY = return_dict['API_KEY']
                 self.c.write_config('API_KEY', API_KEY)
 
-                LOC_ID = console.input_alert("Location id", "Location id nr [Loc. ID]", "1", "OK")
+                LOC_ID = return_dict['LOC_ID']
                 if not LOC_ID.isdigit():
-                    package = "1"
+                    LOC_ID = "1"
                 self.c.write_config('LOC_ID', LOC_ID)
 
-                package = console.input_alert("Voucher package", "voucher package id nr", "1", "OK")
+                package = return_dict['package']
                 if not package.isdigit():
                     package = "1"
                 self.c.write_config('package', package)
@@ -297,11 +349,16 @@ if ispythonista:
         def make_buttons(self, name, top):
             button = ui.Button()
             button.name = name
-            button.title = name
+            if name == "Print":
+                button.title = ""
+            else:
+                button.title = name
+                button.background_color = self.unselect_color
+
+            # For all buttons
             button.border_color = 'blue'
             button.border_width = 1
             button.corner_radius = 3
-            button.background_color = self.unselect_color
 
             # Create the action for the top buttons
             if top:
@@ -367,31 +424,39 @@ if ispythonista:
 
             # Settings
             elif sender.name == self.btn_6.name:
-                alert_result = console.alert('Setings',"change:", button1='limit/offset', button2='voucher package', button3='Reset app!')
+                alert_result = console.alert('Settings',"change:", button1='Configuration', button2='Reset app!')
                 #selected button is returned as an integer 
 
-                ui.KEYBOARD_NUMBER_PAD
                 # Change limit and offset
                 if alert_result == 1:
-                    limit = console.input_alert("Change limit", "limit voucher list", self.c.get_config('limit'), "OK")
+                    return_dict = dialogs.form_dialog(title='Configuration', fields=[
+                        {'key':'limit','type':'number','title':'Limit voucher list','value':self.c.get_config('limit')},
+                        {'key':'offset','type':'number','title':'Offset in voucher list','value':self.c.get_config('offset')},
+                        {'key':'package','type':'number','title':'Voucher package id nr','value':self.c.get_config('package')},
+                        {'key':'package_filter','type':'text','title':'Filter vouchers by string','value':self.c.get_config('package_filter')},
+                    ], sections=None)
+
+                    limit = return_dict['limit']
                     if not limit.isdigit():
                         limit = "100"
                     self.c.write_config('limit', limit)
 
-                    offset = console.input_alert("Change offset", "offset in voucher list", self.c.get_config('offset'), "OK")
+                    offset = return_dict['offset']
                     if not offset.isdigit():
                         offset = "0"
                     self.c.write_config('offset', offset)
 
-                # Change voucher package
-                elif alert_result == 2:
-                    package = console.input_alert("Voucher package", "voucher package id nr", self.c.get_config('package'), "OK")
+                    package = return_dict['package']
                     if not package.isdigit():
                         package = "1"
                     self.c.write_config('package', package)
 
+                    package_filter = return_dict['package_filter']
+                    self.c.write_config('package_filter', package_filter)
+
+
                 # Reset app
-                elif alert_result == 3:
+                elif alert_result == 2:
                     if os.path.exists(CONFIG_FILEPATH):
                         os.remove(CONFIG_FILEPATH)
                     self.c.write_config('reset', True)
@@ -400,6 +465,34 @@ if ispythonista:
                 # Printe to screen
                 self.txtv_1.text = "Settings:\nlimit=%s\noffset=%s"%(self.c.get_config('limit'), self.c.get_config('offset'))
                 self.txtv_2.text = "package=%s"%(self.c.get_config('package'))
+
+            # Print
+            elif sender.name == self.btn_7.name:
+                #console.hud_alert("Print", 'success')
+                print_result = console.alert('Print vouchers',"Print or share to system?", button1='Print current voucher', button2='Print all vouchers', button3='Share to system')
+ 
+                # Send current voucher to "real" printer
+                if print_result == 1:
+                    string = self.c.get_generated_voucher_string()
+                    self.print_text(string)
+
+                # Send all vouchers to "real" printer
+                elif print_result == 2:
+                    console.hud_alert("Print all", 'success')
+
+                # Share to system
+                elif print_result == 3:
+                    share_result = console.alert('Share vouchers',"to system", button1='Current voucher', button2='All vouchers')
+
+                    # Send current voucher to system
+                    if share_result == 1:
+                        string = self.c.get_generated_voucher_string()
+                        dialogs.share_text(string)
+
+                    # Send all vouchers to system
+                    elif share_result == 2:
+                        console.hud_alert("Share all", 'success')
+
 
         # Refresh the table from the server
         def refresh_table(self):
@@ -415,6 +508,16 @@ if ispythonista:
             self.txtv_1.text = "Last voucher:\n%s"%time
             self.txtv_2.text = "%s"%code
 
+        # Print directly to printer
+        @on_main_thread
+        def print_text(self, text):
+            UIPrintInteractionController = ObjCClass('UIPrintInteractionController')
+            UIPrintSimpleTextFormatter = ObjCClass('UISimpleTextPrintFormatter')
+            controller = UIPrintInteractionController.sharedPrintController()
+            formatter = UIPrintSimpleTextFormatter.alloc().initWithText_(text).autorelease()
+            controller.setPrintFormatter_(formatter)
+            controller.presentAnimated_completionHandler_(True, None)
+
         # Define layout of views
         def layout(self):
             self.tv.reload()
@@ -426,6 +529,7 @@ if ispythonista:
             self.btn_4.frame =(0*self.width/3, self.height - self.button_height*2, self.width/3, self.button_height)
             self.btn_5.frame =(1*self.width/3, self.height - self.button_height*2, self.width/3, 2*self.button_height)
             self.btn_6.frame =(0*self.width/3, self.height - self.button_height*1, self.width/3, self.button_height)
+            self.btn_7.frame =(2*self.width/3, self.height - self.button_height*2, self.width/3, 2*self.button_height)
             # TableView frame
             self.tv.frame = (0, self.button_height, self.width, self.height - self.button_height*3)
             # Text field frame
@@ -486,7 +590,7 @@ class Interpreter(object):
 
             LOC_ID = input('''Enter the location id nr [Loc. ID]:\n''').strip()
             if not LOC_ID.isdigit():
-                package = "1"
+                LOC_ID = "1"
             self.c.write_config('LOC_ID', LOC_ID)
 
             package = input('''Enter the Voucher package id nr:\n''').strip()
@@ -510,19 +614,21 @@ class Interpreter(object):
     def menu(self):
         ans=True
         while ans:
+            print("")
             print(" 1. Show available vouchers")
             print(" 2. Refresh voucher list from server ")
             print(" 3. Generate a voucher")
+            print(" 4. Print last voucher")
             print("")
-            print(" 4. Change settings")
-            print(" 5. Exit/Quit")
+            print(" 5. Change settings")
+            print(" 6. Exit/Quit")
 
             ans=raw_input("What would you like to do? ") 
             if ans=="1": 
                 print("")
                 print("------------------------------------------")
                 print("|                                        |")
-                print(" Vouchers - not activated yet            :")
+                print("|   Available vouchers at location       |")
                 print("------------------------------------------")
                 self.print_vouchers()
 
@@ -530,7 +636,7 @@ class Interpreter(object):
                 print("")
                 print("------------------------------------------")
                 print("|                                        |")
-                print(" Refresh voucher list from server        :")
+                print("|   Refresh voucher list from server     |")
                 print("------------------------------------------")
                 self.c.get_vouchers()
                 if self.check_api_call():
@@ -539,8 +645,8 @@ class Interpreter(object):
             elif ans=="3":
                 print("")
                 print("------------------------------------------")
-                print("")
-                print(" Generating a voucher                    :")
+                print("|                                        |")
+                print("|   Generating a voucher                 |")
                 print("------------------------------------------")
                 self.c.generate_voucher()
                 if self.check_api_call():
@@ -549,12 +655,20 @@ class Interpreter(object):
             elif ans=="4":
                 print("")
                 print("------------------------------------------")
+                print("|                                        |")
+                print("|   Print last voucher                   |")
+                print("------------------------------------------")
+                self.print_generated_voucher()
+
+            elif ans=="5":
                 print("")
-                print(" Changing settings                       :")
+                print("------------------------------------------")
+                print("|                                        |")
+                print("|    Changing settings                   |")
                 print("------------------------------------------")
                 self.change_settings()
 
-            elif ans=="5":
+            elif ans=="6":
                 print("\n Goodbye")
                 ans=False
 
@@ -566,13 +680,16 @@ class Interpreter(object):
     def change_settings(self):
         ans=True
         while ans:
+            print("")
             print(" 1. Change default limit of shown vouchers")
             print(" 2. Change offset")
             print(" 3. Change voucher package id")
-            print(" 4. Reset configuration file. ")
-            print(" NOTE: This will delete the API key and location id.")
+            print(" 4. Change voucher package string criteria")
             print("")
-            print(" 5. Exit menu")
+            print("    NOTE: This will delete the API key and location id.")
+            print(" 5. Reset configuration file. ")
+            print("")
+            print(" 6. Exit menu")
 
             ans=raw_input("What would you like to do? ") 
             if ans=="1": 
@@ -600,13 +717,19 @@ class Interpreter(object):
                 self.c.write_config('package', package)
 
             elif ans=="4":
+                print("Current voucher string criteria: %s"%self.c.get_config('package_filter'))
+                package_filter= input('''Enter new criteria:\n''').strip() or ""
+                print("New criteria: %s\n"%package_filter)
+                self.c.write_config('package_filter', package_filter)
+
+            elif ans=="5":
                 print("Resetting configuration file.")
                 if os.path.exists(CONFIG_FILEPATH):
                     os.remove(CONFIG_FILEPATH)
                 self.c.write_config('reset', True)
                 self.setup_configuration()
 
-            elif ans=="5":
+            elif ans=="6":
                 ans=False
 
             elif ans !="":
@@ -620,17 +743,8 @@ class Interpreter(object):
 
     # Print server generated voucher
     def print_generated_voucher(self):
-        print("")
-        print("You have to activate the card before first use.")
-        print("After activation the same code can be used as the")
-        print("Username and Password to log in to the Hotspot.")
-        print("")
-        print("-----------------------")
-        print("| %s |"%self.c.config['last_voucher_time'])
-        print("|     %11s     |"%self.c.config['last_voucher'])
-        print("-----------------------")
-        print("")
-
+        string = self.c.get_generated_voucher_string()
+        print("%s"%string)
 
 # Process any supplied arguments
 log_level = 'INFO'
