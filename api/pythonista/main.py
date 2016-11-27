@@ -36,7 +36,8 @@
 #                                                                             #
 ###############################################################################
 
-import platform, os, datetime, logging, sys, os, json, requests
+import platform, os, datetime, sys, os, json, requests
+#import logging, 
 from operator import itemgetter
 from time import strftime
 
@@ -51,11 +52,11 @@ from time import strftime
 
 ##########################################
 # Custom logging level
-FINE = 15
+#FINE = 15
 
 # Silence request
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
+#logging.getLogger("requests").setLevel(logging.WARNING)
+#logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 # file locations used by the program
 PYTHONISTA_DOC_DIR = os.path.expanduser('~/Documents')
@@ -105,7 +106,7 @@ class Common(object):
                 config = json.load(config_file)
                 config['reset'] = False
         else:
-            logging.log(FINE, 'Configuration file missing')
+            #logging.log(FINE, 'Configuration file missing')
             config = {}
 
         list_configs = [
@@ -621,7 +622,7 @@ class Interpreter(object):
     # Do setup of config dictionary
     def setup_configuration(self):
         if self.c.get_config(key='reset'):
-            logging.info('Get your API key from hotspotsystem')
+            #logging.info('Get your API key from hotspotsystem')
             API_KEY = input('''Enter your API key:\n''').strip()
             self.c.write_config('API_KEY', API_KEY)
 
@@ -814,11 +815,11 @@ for argument in sys.argv:
 
 
 # configure logging
-log_format = "%(message)s"
-logging.addLevelName(FINE, 'FINE')
-for handler in logging.getLogger().handlers:
-    logging.getLogger().removeHandler(handler)
-logging.basicConfig(format=log_format, level=log_level)
+#log_format = "%(message)s"
+#logging.addLevelName(FINE, 'FINE')
+#for handler in logging.getLogger().handlers:
+#    logging.getLogger().removeHandler(handler)
+#logging.basicConfig(format=log_format, level=log_level)
 
 
 ## Add UI
