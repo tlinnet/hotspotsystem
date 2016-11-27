@@ -191,21 +191,52 @@ class Common(object):
         else:
             return ("---", "---")
 
+
+    def get_all_vouchers_string(self):
+        entries = ['Index', 'voucher_code', 'usage_exp', 'validity', 'price_enduser', 12*' '+'serial', 'simultaneous_use', 'limit_dl', 'limit_ul', 'limit_tl']
+
+        # Start string
+        s = ""
+
+        # Make header
+        nr = []
+        for entry in entries:
+            s += entry + ", "
+            nr.append(len(entry))
+        s += "\n"
+
+        # Make separator
+        for n in nr:
+            s += n*"-" + ", "
+        s += "\n"
+
+        # Fill data
+        vouchers = self.read_vouchers(full=True)
+        # Loop over vouchers
+        for voucher in vouchers:
+            # Loop over fields
+            for i, field in enumerate(voucher):
+                n = nr[i]
+                length = n-len(str(field))
+                s += length*" "
+                s += str(field)
+                s += ", "
+            s += "\n"
+        s += "\n"
+
+        return s
+
     # Make a string for last voucher
     def get_generated_voucher_string(self):
-        string = """
--------  Hotspotsystem Voucher  -------
-
-You have to activate the card before
-first use. After activation the same
-code can be used as the 'Username' 
-and 'Password' to log in.
-
-Generated: %s
-
-Code:      %s
-
-        """ % self.read_last_voucher()
+        time, code = self.read_last_voucher()
+        string = "-------  Hotspotsystem Voucher  -------" + "\n"
+        string += "You have to activate the card before" + "\n"
+        string += "first use. After activation the same" + "\n"
+        string += "code can be used as the 'Username'" + "\n"
+        string += "and 'Password' to log in." + "\n"
+        string += "" + "\n"
+        string += "Generated: %s"%time + "\n"
+        string += "Code:      %s"%code + "\n"
         return string
 
     # Use hotspotsystem API to generate voucher
@@ -478,7 +509,8 @@ if ispythonista:
 
                 # Send all vouchers to "real" printer
                 elif print_result == 2:
-                    console.hud_alert("Print all", 'success')
+                    string = self.c.get_all_vouchers_string()
+                    self.print_text(string)
 
                 # Share to system
                 elif print_result == 3:
@@ -491,7 +523,8 @@ if ispythonista:
 
                     # Send all vouchers to system
                     elif share_result == 2:
-                        console.hud_alert("Share all", 'success')
+                        string = self.c.get_all_vouchers_string()
+                        dialogs.share_text(string)
 
 
         # Refresh the table from the server
@@ -510,11 +543,14 @@ if ispythonista:
 
         # Print directly to printer
         @on_main_thread
-        def print_text(self, text):
+        def print_text(self, text="", font_name='Helvetica', font_size=12):
             UIPrintInteractionController = ObjCClass('UIPrintInteractionController')
-            UIPrintSimpleTextFormatter = ObjCClass('UISimpleTextPrintFormatter')
+            UISimpleTextPrintFormatter = ObjCClass('UISimpleTextPrintFormatter')
             controller = UIPrintInteractionController.sharedPrintController()
-            formatter = UIPrintSimpleTextFormatter.alloc().initWithText_(text).autorelease()
+            formatter = UISimpleTextPrintFormatter.alloc().initWithText_(text).autorelease()
+            font = ObjCClass('UIFont').fontWithName_size_(font_name, font_size)
+            if font:
+                formatter.setFont_(font)
             controller.setPrintFormatter_(formatter)
             controller.presentAnimated_completionHandler_(True, None)
 
@@ -618,10 +654,12 @@ class Interpreter(object):
             print(" 1. Show available vouchers")
             print(" 2. Refresh voucher list from server ")
             print(" 3. Generate a voucher")
-            print(" 4. Print last voucher")
             print("")
-            print(" 5. Change settings")
-            print(" 6. Exit/Quit")
+            print(" 4. Print last voucher")
+            print(" 5. Print all vouchers")
+            print("")
+            print(" 6. Change settings")
+            print(" 7. Exit/Quit")
 
             ans=raw_input("What would you like to do? ") 
             if ans=="1": 
@@ -664,11 +702,19 @@ class Interpreter(object):
                 print("")
                 print("------------------------------------------")
                 print("|                                        |")
+                print("|   Print all vouchers                   |")
+                print("------------------------------------------")
+                self.print_all_vouchers_string()
+
+            elif ans=="6":
+                print("")
+                print("------------------------------------------")
+                print("|                                        |")
                 print("|    Changing settings                   |")
                 print("------------------------------------------")
                 self.change_settings()
 
-            elif ans=="6":
+            elif ans=="7":
                 print("\n Goodbye")
                 ans=False
 
@@ -745,6 +791,13 @@ class Interpreter(object):
     def print_generated_voucher(self):
         string = self.c.get_generated_voucher_string()
         print("%s"%string)
+
+
+    # Print server generated voucher
+    def print_all_vouchers_string(self):
+        string = self.c.get_all_vouchers_string()
+        print("%s"%string)
+
 
 # Process any supplied arguments
 log_level = 'INFO'
