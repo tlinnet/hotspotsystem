@@ -505,12 +505,12 @@ if ispythonista:
                 # Send current voucher to "real" printer
                 if print_result == 1:
                     string = self.c.get_generated_voucher_string()
-                    self.print_text(string)
+                    self.print_text(text=string)
 
                 # Send all vouchers to "real" printer
                 elif print_result == 2:
                     string = self.c.get_all_vouchers_string()
-                    self.print_text(string)
+                    self.print_text(text=string, font_name='Courier', font_size=7)
 
                 # Share to system
                 elif print_result == 3:
@@ -543,7 +543,8 @@ if ispythonista:
 
         # Print directly to printer
         @on_main_thread
-        def print_text(self, text="", font_name='Helvetica', font_size=12):
+        def print_text(self, text="", font_name='Courier', font_size=10):
+            # Helvetica
             UIPrintInteractionController = ObjCClass('UIPrintInteractionController')
             UISimpleTextPrintFormatter = ObjCClass('UISimpleTextPrintFormatter')
             controller = UIPrintInteractionController.sharedPrintController()
