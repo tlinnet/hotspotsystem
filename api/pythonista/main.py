@@ -35,9 +35,7 @@
 # along with this program; if not, write to the Free Software                 #
 #                                                                             #
 ###############################################################################
-
-import platform, os, datetime, sys, os, json, requests
-#import logging, 
+import os, datetime, json, requests
 from operator import itemgetter
 from time import strftime
 
@@ -51,13 +49,6 @@ from time import strftime
 # http://www.hotspotsystem.com/apidocs/api/reference
 
 ##########################################
-# Custom logging level
-#FINE = 15
-
-# Silence request
-#logging.getLogger("requests").setLevel(logging.WARNING)
-#logging.getLogger("urllib3").setLevel(logging.WARNING)
-
 # file locations used by the program
 PYTHONISTA_DOC_DIR = os.path.expanduser('~/Documents')
 SYNC_FOLDER_NAME = '.hotspotsystem'
@@ -66,31 +57,66 @@ CONFIG_FILENAME = 'hotspotsystem.conf'
 CONFIG_FILEPATH = os.path.join(SYNC_STATE_FOLDER, CONFIG_FILENAME)
 ##########################################
 # Check if pythonista
+global ispythonista
+
 ispythonista = False
+#ispythonista = True
 
 # Check platform
-if platform.system() == 'Darwin':
-    if platform.machine().startswith('iP'):
-        ispythonista = True
+if not ispythonista:
+    import platform
+
+    if platform.system() == 'Darwin':
+        if platform.machine().startswith('iP'):
+            ispythonista = True
+            import ui, console, dialogs
+            from objc_util import *
+
+            console.clear()
+            # Disable dimming the screen
+            console.set_idle_timer_disabled(True)
+
+        else:
+            print('You are running on Mac OS X! %s - %s'%(platform.system(), platform.machine()))
+            import logging, sys
+
+            # Custom logging level
+            FINE = 15
+
+            # Silence request
+            logging.getLogger("requests").setLevel(logging.WARNING)
+            logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+            # Process any supplied arguments
+            log_level = 'INFO'
+
+            global update_config
+            update_config = False
+
+            for argument in sys.argv:
+                if argument.lower() == '-v':
+                    log_level = 'FINE'
+                elif argument.lower() == '-vv':
+                    log_level = 'DEBUG'
+                elif argument.lower() == '-c':
+                    update_config = True
+
+            # configure logging
+            log_format = "%(message)s"
+            logging.addLevelName(FINE, 'FINE')
+
+            for handler in logging.getLogger().handlers:
+                logging.getLogger().removeHandler(handler)
+            logging.basicConfig(format=log_format, level=log_level)
+
+
+            # Python 3 compatibility, for input in terminal
+            try: 
+    	        input = raw_input
+            except NameError:
+    	        pass
     else:
-        print('You are running on Mac OS X! %s - %s'%(platform.system(), platform.machine()))
-else:
-    print('Please upgrade to a real computer and then press any key to continue...')
-
-# Import pythonista specific modules
-if ispythonista:
-    import ui, console, dialogs
-    from objc_util import *
-    console.clear()
-    # Disable dimming the screen
-    console.set_idle_timer_disabled(True)
-
-# Python 3 compatibility
-try: 
-	input = raw_input
-except NameError:
-	pass
-
+        print('Please upgrade to a real computer and then press any key to continue...')
 
 # Define Class for shared functions
 class Common(object):
@@ -106,7 +132,10 @@ class Common(object):
                 config = json.load(config_file)
                 config['reset'] = False
         else:
-            #logging.log(FINE, 'Configuration file missing')
+            if not ispythonista:
+                logging.log(FINE, 'Configuration file missing')
+
+            # Make empty settings dict.
             config = {}
 
         list_configs = [
@@ -117,7 +146,8 @@ class Common(object):
         ['reset', True],
         ['error_message', None],
         ['success', None],
-        ['package_filter', ""]
+        ['package_filter', ""],
+        ['reset_code', "1234"]
         ]
 
         # Set key and value if missing in config dict
@@ -342,19 +372,22 @@ if ispythonista:
             self.add_subview(self.tv)
 
             # Show: http://omz-software.com/pythonista/docs/ios/ui.html#ui.View.present
-            self.present('full_screen')
+            #self.present('full_screen')
             #self.present(hide_title_bar=True)
-            #self.present(hide_title_bar=True, animated=False)
+            self.present(hide_title_bar=True, animated=False)
 
 
         # Do setup of config dictionary
         def setup_configuration(self):
             if self.c.get_config(key='reset'):
-                #logging.info('Get your API key from the hotspotsystem website')
+                if not ispythonista:
+                    logging.info('Get your API key from the hotspotsystem website')
+
                 return_dict = dialogs.form_dialog(title='Input to hotspotsystem', fields=[
                     {'key':'API_KEY','type':'password','title':'API Key','value': ""},
                     {'key':'LOC_ID','type':'number','title':'Location id nr [Loc. ID]','value':'1'},
                     {'key':'package','type':'number','title':'Voucher package id nr','value':'1'},
+                    {'key':'reset_code','type':'number','title':'Safety code for resetting app','value':'1234'},
                 ], sections=None)
 
                 API_KEY = return_dict['API_KEY']
@@ -370,10 +403,13 @@ if ispythonista:
                     package = "1"
                 self.c.write_config('package', package)
 
+                reset_code = return_dict['reset_code']
+                self.c.write_config('reset_code', reset_code)
+
         def check_api_call(self):
             success = self.c.get_config(key='success')
             if success:
-                pass
+                console.hud_alert("", 'success', 0.5)
             else:
                 console.hud_alert(self.c.get_config(key='error_message'), 'error')
             return success
@@ -489,10 +525,19 @@ if ispythonista:
 
                 # Reset app
                 elif alert_result == 2:
-                    if os.path.exists(CONFIG_FILEPATH):
-                        os.remove(CONFIG_FILEPATH)
-                    self.c.write_config('reset', True)
-                    self.setup_configuration()
+                    # Get safety code
+                    reset_code = console.input_alert("Safety code","Please input safety code to reset app", "", "OK - Reset app!")
+
+                    # If correct reset code
+                    if reset_code == self.c.get_config('reset_code'):
+                        if os.path.exists(CONFIG_FILEPATH):
+                            os.remove(CONFIG_FILEPATH)
+                        self.c.write_config('reset', True)
+                        self.setup_configuration()
+
+                    # If not correct safety code
+                    else:
+                        console.hud_alert(self.c.get_config(key='Wrong safety code.'), 'error')
 
                 # Printe to screen
                 self.txtv_1.text = "Settings:\nlimit=%s\noffset=%s"%(self.c.get_config('limit'), self.c.get_config('offset'))
@@ -617,12 +662,16 @@ class Interpreter(object):
     def __init__(self):
         # Load the initial configuration
         self.c = Common()
+        if update_config:
+            self.c.write_config('reset', True)
         self.setup_configuration()
 
     # Do setup of config dictionary
     def setup_configuration(self):
         if self.c.get_config(key='reset'):
-            #logging.info('Get your API key from hotspotsystem')
+            if not ispythonista:
+                logging.info('Get your API key from hotspotsystem')
+
             API_KEY = input('''Enter your API key:\n''').strip()
             self.c.write_config('API_KEY', API_KEY)
 
@@ -635,6 +684,10 @@ class Interpreter(object):
             if not package.isdigit():
                 package = "1"
             self.c.write_config('package', package)
+
+            reset_code = input('''Enter a safety code, which is used when resetting the App:\n''').strip() or "1234"
+            self.c.write_config('reset_code', reset_code)
+
 
     def check_api_call(self):
         success = self.c.get_config(key='success')
@@ -772,10 +825,19 @@ class Interpreter(object):
 
             elif ans=="5":
                 print("Resetting configuration file.")
-                if os.path.exists(CONFIG_FILEPATH):
-                    os.remove(CONFIG_FILEPATH)
-                self.c.write_config('reset', True)
-                self.setup_configuration()
+                reset_code = input('''Enter safety code to reset:\n''').strip() or ""
+
+                # If correct reset code
+                if reset_code == self.c.get_config('reset_code'):
+                    if os.path.exists(CONFIG_FILEPATH):
+                        os.remove(CONFIG_FILEPATH)
+                    self.c.write_config('reset', True)
+                    print("\nRESET!\n")
+                    self.setup_configuration()
+
+                # If not correct safety code
+                else:
+                    print("Wrong safety code provided. Not resetting.")
 
             elif ans=="6":
                 ans=False
@@ -799,28 +861,6 @@ class Interpreter(object):
     def print_all_vouchers_string(self):
         string = self.c.get_all_vouchers_string()
         print("%s"%string)
-
-
-# Process any supplied arguments
-log_level = 'INFO'
-update_config = False
-
-for argument in sys.argv:
-    if argument.lower() == '-v':
-        log_level = 'FINE'
-    elif argument.lower() == '-vv':
-        log_level = 'DEBUG'
-    elif argument.lower() == '-c':
-        update_config = True
-
-
-# configure logging
-#log_format = "%(message)s"
-#logging.addLevelName(FINE, 'FINE')
-#for handler in logging.getLogger().handlers:
-#    logging.getLogger().removeHandler(handler)
-#logging.basicConfig(format=log_format, level=log_level)
-
 
 ## Add UI
 if ispythonista:
