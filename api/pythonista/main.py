@@ -56,11 +56,13 @@ SYNC_STATE_FOLDER = os.path.join(PYTHONISTA_DOC_DIR, SYNC_FOLDER_NAME)
 CONFIG_FILENAME = 'hotspotsystem.conf'
 CONFIG_FILEPATH = os.path.join(SYNC_STATE_FOLDER, CONFIG_FILENAME)
 ##########################################
+
+# Switch before last Xcode compiling and Apple submit.
+
 # Check if pythonista
 global ispythonista
-
-ispythonista = False
-#ispythonista = True
+#ispythonista = False
+ispythonista = True
 
 # Check platform
 if not ispythonista:
@@ -69,12 +71,6 @@ if not ispythonista:
     if platform.system() == 'Darwin':
         if platform.machine().startswith('iP'):
             ispythonista = True
-            import ui, console, dialogs
-            from objc_util import *
-
-            console.clear()
-            # Disable dimming the screen
-            console.set_idle_timer_disabled(True)
 
         else:
             print('You are running on Mac OS X! %s - %s'%(platform.system(), platform.machine()))
@@ -117,6 +113,16 @@ if not ispythonista:
     	        pass
     else:
         print('Please upgrade to a real computer and then press any key to continue...')
+
+# If pythonista, then import
+if ispythonista:
+    import ui, console, dialogs
+    from objc_util import *
+
+    console.clear()
+    # Disable dimming the screen
+    console.set_idle_timer_disabled(True)
+
 
 # Define Class for shared functions
 class Common(object):
@@ -296,8 +302,8 @@ class Common(object):
 
     # Write the updated configuration
     def write_configuration(self):
-	    with open(CONFIG_FILEPATH, 'w') as config_file:
-			json.dump(self.config, config_file, indent=1)
+        with open(CONFIG_FILEPATH, 'w') as config_file:
+            json.dump(self.config, config_file, indent=1)
 
     # Return the value of the config
     def get_config(self, key):
