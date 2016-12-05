@@ -108,9 +108,9 @@ if not ispythonista:
 
             # Python 3 compatibility, for input in terminal
             try: 
-    	        input = raw_input
+                input = raw_input
             except NameError:
-    	        pass
+                pass
     else:
         print('Please upgrade to a real computer and then press any key to continue...')
 
@@ -201,7 +201,7 @@ class Common(object):
     def __init__(self):
         self.setup_configuration()
 
-    # If a configuration file does not exist, this will prompt the user for inital configuration values		
+    # If a configuration file does not exist, this will prompt the user for inital configuration values
     def setup_configuration(self):
         if not os.path.exists(SYNC_STATE_FOLDER):
             os.mkdir(SYNC_STATE_FOLDER)
@@ -1004,7 +1004,7 @@ class MyTableViewDataSource(object):
 
         elif pos == 2:
             label.frame = (self.width*3/5, 0, self.width*2/5, self.row_height)
-            
+
 
         label.alignment = ui.ALIGN_CENTER
         cell.content_view.add_subview(label)
@@ -1059,7 +1059,7 @@ class Interpreter(object):
             print("------------------------------------------")
         return success
 
-        
+
     # Create initial menu for selection
     def menu(self):
         ans=True
