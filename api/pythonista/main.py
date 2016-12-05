@@ -35,7 +35,7 @@
 # along with this program; if not, write to the Free Software                 #
 #                                                                             #
 ###############################################################################
-import os, datetime, json, requests
+import os, datetime, json
 from operator import itemgetter
 from time import strftime
 
@@ -61,12 +61,12 @@ CONFIG_FILEPATH = os.path.join(SYNC_STATE_FOLDER, CONFIG_FILENAME)
 
 # Check if pythonista
 global ispythonista
-ispythonista = False
-#ispythonista = True
+#ispythonista = False
+ispythonista = True
 
 # Check platform
 if not ispythonista:
-    import platform
+    import platform, requests
 
     if platform.system() == 'Darwin':
         if platform.machine().startswith('iP'):
@@ -116,15 +116,84 @@ if not ispythonista:
 
 # If pythonista, then import
 if ispythonista:
-    import ui, console, dialogs
+    # Only for pythonista, as a replacement for requests
+    from urlparse import urlparse
+    from urllib import urlencode
+    from ctypes import c_void_p
+    import base64
 
     # For objc_util, see 
     # https://gist.github.com/rakhmad/23b3a13682ffe4c4ce64
-    from objc_util import *
+    import objc_util
+    import ui, console, dialogs
 
     console.clear()
     # Disable dimming the screen
     console.set_idle_timer_disabled(True)
+
+
+# Class for errors
+class RequestsException(Exception):
+    pass
+
+
+# Define Class for request function
+class Requests(object):
+    def __init__(self):
+        self.data = None
+        self.error = None
+
+    def get(self, url=None, auth=None, headers=None, params=None):
+        # Make url
+        if params:
+            params_encoded = urlencode(params)
+        else:
+            params_encoded = ""
+
+        url = objc_util.nsurl("{}?{}".format(url, params_encoded))
+
+        #request = objc_util.ObjCClass("NSURLRequest").request(URL=url)
+        request = objc_util.ObjCClass('NSMutableURLRequest').alloc().initWithURL_(url)
+
+        # Make headers
+        if headers:
+            for key in headers:
+                request.setValue_forHTTPHeaderField_(headers[key], key)
+
+        if auth:
+            userName, password  = auth
+            authStr = "%s:%s"%(userName, password)
+            authencode = base64.b64encode(bytes(authStr))
+            request.addValue_forHTTPHeaderField_("Basic %s"%authencode, "Authorization")
+
+        configuration = objc_util.ObjCClass("NSURLSessionConfiguration").defaultSessionConfiguration()
+        session = objc_util.ObjCClass("NSURLSession").sessionWithConfiguration_(configuration)
+
+        completionHandler = objc_util.ObjCBlock(self.responseHandlerBlock, restype=None, argtypes=[c_void_p, c_void_p, c_void_p, c_void_p])
+        objc_util.retain_global(completionHandler)
+
+        #dataTask = session.dataTask(Request=request, completionHandler=completionHandler)
+        dataTask = session.dataTaskForRequest_completion_(request, completionHandler)
+        dataTask.resume()
+
+        # Wait for completions
+        wait = True
+        while wait:
+            if self.data != None:
+                wait = False
+                return json.loads(self.data)
+            elif self.error != None:
+                wait = False
+                raise RequestsException(["Error in request", self.error]) 
+
+
+    def responseHandlerBlock(self, _cmd, data, response, error):
+        if error is not None:
+            self.error = objc_util.ObjCInstance(error)
+        else:
+            response = objc_util.ObjCInstance(response)
+            data = objc_util.ObjCInstance(data)
+            self.data = objc_util.nsdata_to_bytes(data)
 
 
 # Define Class for shared functions
@@ -227,36 +296,48 @@ class Common(object):
         url=root+'/locations/'+self.config['LOC_ID']+'/generate/voucher.json'
         params = {'package':self.config['package']}
 
-        # Test ipv6
-        #root='http://ipv6.whatismyv6.com/'
-        #url=root
-        #headers = {}
-        #params = {}
+        if ispythonista:
+            try:
+                r = Requests().get(url=url, auth=(self.config['API_KEY'], 'x'), params=params)
+                # Get success
+                success = r['success']
+                if not success:
+                    self.config['error_message'] = r['error']['message']
+                else: 
+                    self.config['error_message'] = None
+                self.config['success'] = success
+            except RequestsException as e:
+                emessg = str(e.message[-1])
+                success = False
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
-        try:
-            r = requests.get(url, auth=(self.config['API_KEY'], 'x'), params=params)
+        else:
+            try:
+                r = requests.get(url, auth=(self.config['API_KEY'], 'x'), params=params)
+                # Get success
+                success = r.json()['success']
+                if not success:
+                    self.config['error_message'] = r.json()['error']['message']
+                else: 
+                    self.config['error_message'] = None
+                self.config['success'] = success
 
-            # Get success
-            success = r.json()['success']
-            if not success:
-                self.config['error_message'] = r.json()['error']['message']
-            else: 
-                self.config['error_message'] = None
-
-            self.config['success'] = success
-
-        except requests.exceptions.RequestException as e:
-            emessg = str(e.message[-1])
-            success = False
-            self.config['success'] = success
-            self.config['error_message'] = emessg
+            except requests.exceptions.RequestException as e:
+                emessg = str(e.message[-1])
+                success = False
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
         # Get success
         if success:
             # Get the time
             cur_time = strftime("%Y-%m-%d %H:%M:%S")
             # Store and save
-            self.config['last_voucher'] = r.json()['access_code']
+            if ispythonista:
+                self.config['last_voucher'] = r['access_code']
+            else:
+                self.config['last_voucher'] = r.json()['access_code']
             self.config['last_voucher_time'] = cur_time
 
         # Write
@@ -271,29 +352,40 @@ class Common(object):
         headers = {'sn-apikey': self.config['API_KEY']}
         params = {'locationId': self.config['LOC_ID'],'limit':self.config['limit'],'offset':self.config['offset']}
 
-        # Test ipv6
-        #root='http://ipv6.whatismyv6.com/'
-        #url=root
-        #headers = {}
-        #params = {}
-
-        try:
-            r = requests.get(url, headers=headers, params=params)
-            # Get success
-            if 'error' in r.json():
+        if ispythonista:
+            try:
+                r = Requests().get(url, headers=headers, params=params)
+                # Get success
+                if 'error' in r:
+                    success = False
+                    self.config['error_message'] = r['error']
+                else: 
+                    success = True
+                    self.config['error_message'] = None
+                self.config['success'] = success
+            except RequestsException as e:
+                emessg = str(e.message[-1])
                 success = False
-                self.config['error_message'] = r.json()['error']
-            else: 
-                success = True
-                self.config['error_message'] = None
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
-            self.config['success'] = success
+        else:
+            try:
+                r = requests.get(url, headers=headers, params=params)
+                # Get success
+                if 'error' in r.json():
+                    success = False
+                    self.config['error_message'] = r.json()['error']
+                else: 
+                    success = True
+                    self.config['error_message'] = None
+                self.config['success'] = success
 
-        except requests.exceptions.RequestException as e:
-            emessg = str(e.message[-1])
-            success = False
-            self.config['success'] = success
-            self.config['error_message'] = emessg
+            except requests.exceptions.RequestException as e:
+                emessg = str(e.message[-1])
+                success = False
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
         if success:
             vouchers = []
@@ -301,7 +393,12 @@ class Common(object):
             # Get search_criteria
             criteria = self.get_config(key='package_filter')
 
-            for v in r.json()['items']:
+            if ispythonista:
+                items = r['items']
+            else:
+                items = r.json()['items']
+
+            for v in items:
                 ct = v['voucher_code'].split("-")[0]
                 if criteria not in ct:
                     continue
@@ -324,29 +421,40 @@ class Common(object):
         headers = {'sn-apikey': self.config['API_KEY']}
         params = {'locationId': self.config['LOC_ID'],'limit':self.config['limit'],'offset':self.config['offset']}
 
-        # Test ipv6
-        #root='http://ipv6.whatismyv6.com/'
-        #url=root
-        #headers = {}
-        #params = {}
-
-        try:
-            r = requests.get(url, headers=headers, params=params)
-            # Get success
-            if 'error' in r.json():
+        if ispythonista:
+            try:
+                r = Requests().get(url, headers=headers, params=params)
+                # Get success
+                if 'error' in r:
+                    success = False
+                    self.config['error_message'] = r['error']
+                else: 
+                    success = True
+                    self.config['error_message'] = None
+                self.config['success'] = success
+            except RequestsException as e:
+                emessg = str(e.message[-1])
                 success = False
-                self.config['error_message'] = r.json()['error']
-            else: 
-                success = True
-                self.config['error_message'] = None
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
-            self.config['success'] = success
+        else:
+            try:
+                r = requests.get(url, headers=headers, params=params)
+                # Get success
+                if 'error' in r.json():
+                    success = False
+                    self.config['error_message'] = r.json()['error']
+                else: 
+                    success = True
+                    self.config['error_message'] = None
+                self.config['success'] = success
 
-        except requests.exceptions.RequestException as e:
-            emessg = str(e.message[-1])
-            success = False
-            self.config['success'] = success
-            self.config['error_message'] = emessg
+            except requests.exceptions.RequestException as e:
+                emessg = str(e.message[-1])
+                success = False
+                self.config['success'] = success
+                self.config['error_message'] = emessg
 
         if success:
             transactions = []
@@ -358,7 +466,12 @@ class Common(object):
             date_start = datetime.datetime.strptime(self.get_config('date_start'), '%Y-%m-%d')
             date_end = datetime.datetime.strptime(self.get_config('date_end'), '%Y-%m-%d')
 
-            for v in r.json()['items']:
+            if ispythonista:
+                items = r['items']
+            else:
+                items = r.json()['items']
+
+            for v in items:
                 ct = v['user_name'].split("-")[0]
                 if criteria not in ct:
                     continue
@@ -506,7 +619,6 @@ if ispythonista:
             # Set name of View
             self.name = 'Hotspotsystem Vouchers'
             self.background_color = 'white'
-            #self.tv.delegate = MyTableViewDelegate()
 
             # Create TextView 1 and 2
             self.txtv_1 = ui.TextView()
@@ -529,7 +641,7 @@ if ispythonista:
             # Define buttons and create the sub_views
             self.btn_1 = self.make_buttons('Index', True) #Name
             self.btn_2 = self.make_buttons('Code', True) #Size
-            self.btn_3 = self.make_buttons('Time', True) #Date
+            self.btn_3 = self.make_buttons('Transaction time', True) #Date
 
             # Make bottom button
             self.btn_4 = self.make_buttons('Refresh table', False)
@@ -541,12 +653,14 @@ if ispythonista:
             self.tv = ui.TableView()
             self.tv.row_height = 30
             self.tv.data_source = MyTableViewDataSource(self.tv.row_height)
+            #self.tv.delegate = MyTableViewDelegate()
 
             # Update tableview data
             self.tv.data_source.items = sorted(self.c.read_vouchers(), key=itemgetter(0), reverse=True)
 
             # Do not allow selection on the TableView
             self.tv.allows_selection = False
+            #self.tv.allows_selection = True
 
             # Add the table
             self.add_subview(self.tv)
@@ -825,19 +939,17 @@ if ispythonista:
             self.txtv_2.text = "%s"%code
 
         # Print directly to printer
-        @on_main_thread
+        @objc_util.on_main_thread
         def print_text(self, text="", font_name='Courier', font_size=10):
             # Helvetica
-            UIPrintInteractionController = ObjCClass('UIPrintInteractionController')
-            UISimpleTextPrintFormatter = ObjCClass('UISimpleTextPrintFormatter')
-            controller = UIPrintInteractionController.sharedPrintController()
+            controller = objc_util.ObjCClass('UIPrintInteractionController').sharedPrintController()
 
             # NSMutableString *printBody = [NSMutableString stringWithFormat:@"some text"];
             # UISimpleTextPrintFormatter *formatter = [[UISimpleTextPrintFormatter alloc] initWithText:printBody];
-            formatter = UISimpleTextPrintFormatter.alloc().initWithText_(text).autorelease()
+            formatter = objc_util.ObjCClass('UISimpleTextPrintFormatter').alloc().initWithText_(text).autorelease()
 
             # formatter.font=[UIFont fontWithName:@"Arail Bold" size:40];
-            font = ObjCClass('UIFont').fontWithName_size_(font_name, font_size)
+            font = objc_util.ObjCClass('UIFont').fontWithName_size_(font_name, font_size)
             if font:
                 formatter.setFont_(font)
             controller.setPrintFormatter_(formatter)
