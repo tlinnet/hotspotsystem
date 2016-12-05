@@ -236,6 +236,8 @@ class Common(object):
         ['reset_code', "1234"],
         ['date_start', startmonth_str],
         ['print_transactions', False],
+        ['select_voucher', None],
+        ['select_voucher_index', None],
         ]
 
         # Set key and value if missing in config dict
@@ -500,10 +502,14 @@ class Common(object):
 
     # Read the last generated voucher from dict
     def read_last_voucher(self):
-        if 'last_voucher' in self.config:
-            return (self.config['last_voucher_time'], self.config['last_voucher'])
+        if self.config['select_voucher']:
+            return ("Index:", self.config['select_voucher_index'], self.config['select_voucher'])
         else:
-            return ("---", "---")
+            return ("Generated:", self.config['last_voucher_time'], self.config['last_voucher'])
+        #if 'last_voucher' in self.config:
+        #    return (self.config['last_voucher_time'], self.config['last_voucher'])
+        #else:
+        #    return ("---", "---")
 
 
     def get_all_vouchers_string(self):
@@ -576,15 +582,15 @@ class Common(object):
 
     # Make a string for last voucher
     def get_generated_voucher_string(self):
-        time, code = self.read_last_voucher()
+        string_inp, time_index, code = self.read_last_voucher()
         string = "-------  Hotspotsystem Voucher  -------" + "\n"
         string += "You have to activate the card before" + "\n"
         string += "first use. After activation the same" + "\n"
         string += "code can be used as the 'Username'" + "\n"
         string += "and 'Password' to log in." + "\n"
         string += "" + "\n"
-        string += "Generated: %s"%time + "\n"
-        string += "Code:      %s"%code + "\n"
+        string += "%s %s"%(string_inp, time_index) + "\n"
+        string += "Code: %s"%code + "\n"
         return string
 
     # Write the updated configuration
@@ -653,14 +659,14 @@ if ispythonista:
             self.tv = ui.TableView()
             self.tv.row_height = 30
             self.tv.data_source = MyTableViewDataSource(self.tv.row_height)
-            #self.tv.delegate = MyTableViewDelegate()
+            self.tv.delegate = MyTableViewDelegate()
 
             # Update tableview data
             self.tv.data_source.items = sorted(self.c.read_vouchers(), key=itemgetter(0), reverse=True)
 
             # Do not allow selection on the TableView
-            self.tv.allows_selection = False
-            #self.tv.allows_selection = True
+            #self.tv.allows_selection = False
+            self.tv.allows_selection = True
 
             # Add the table
             self.add_subview(self.tv)
@@ -798,6 +804,8 @@ if ispythonista:
         def bot_btn_action(self, sender):
             # Refresh
             if sender.name == self.btn_4.name:
+                self.c.write_config('select_voucher_index', None)
+                self.c.write_config('select_voucher', None)
                 self.refresh_last_voucher()
                 self.c.get_vouchers()
                 if self.check_api_call():
@@ -807,6 +815,8 @@ if ispythonista:
             elif sender.name == self.btn_5.name:
                 self.c.generate_voucher()
                 if self.check_api_call():
+                    self.c.write_config('select_voucher_index', None)
+                    self.c.write_config('select_voucher', None)
                     self.refresh_last_voucher()
                     # Update table
                     self.c.get_vouchers()
@@ -934,8 +944,8 @@ if ispythonista:
                 self.tv.reload()
 
         def refresh_last_voucher(self):
-            time, code = self.c.read_last_voucher()
-            self.txtv_1.text = "Last voucher:\n%s"%time
+            string, time_index, code = self.c.read_last_voucher()
+            self.txtv_1.text = "%s\n%s"%(string, time_index)
             self.txtv_2.text = "%s"%code
 
         # Print directly to printer
@@ -986,7 +996,7 @@ class MyTableViewDataSource(object):
     def tableview_cell_for_row(self, tableview, section, row):
         self.width, height = ui.get_screen_size()
         cell = ui.TableViewCell()
-        cell.bounds = (0,0,self.width,self.row_height)
+        cell.bounds = (0, 0, self.width, self.row_height)
         for i in range(3):
             self.make_labels(cell, tableview.data_source.items[row][i], i)
         return cell
@@ -998,18 +1008,21 @@ class MyTableViewDataSource(object):
         label.text = str(text)
         if pos == 0:
             label.frame = (self.width*0/5, 0, self.width/5, self.row_height)
-
         elif pos == 1:
             label.frame = (self.width*1/5, 0, self.width*2/5, self.row_height)
-
         elif pos == 2:
             label.frame = (self.width*3/5, 0, self.width*2/5, self.row_height)
-
-
         label.alignment = ui.ALIGN_CENTER
         cell.content_view.add_subview(label)
 
-#class MyTableViewDelegate(object):
+class MyTableViewDelegate(object):
+    @ui.in_background
+    def tableview_did_select(self, tableview, section, row):
+        select_voucher_index, select_voucher = tableview.data_source.items[row][:2]
+        Common().write_config('select_voucher_index', select_voucher_index)
+        Common().write_config('select_voucher', select_voucher)
+        MyTableView().refresh_last_voucher()
+
 #    def tableview_did_select(self, tableview, section, row):
 #        print 'select'
 #    def tableview_did_deselect(self, tableview, section, row):
