@@ -1,7 +1,8 @@
 #!/bin/sh
 
 CHILLINET=`uci get chilli.@chilli[0].net`
-LANNET=192.168.1.1
+#LANNET=192.168.1.1
+LANNET=`uci -P /var/state -q get network.lan.ipaddr`
 USBNET=192.168.8.1
 MASK=255.255.255.0
 
