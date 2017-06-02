@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/bash
 
 # Get the external IP:
 EXTIP=`wget http://ipinfo.io/ip -qO -`
