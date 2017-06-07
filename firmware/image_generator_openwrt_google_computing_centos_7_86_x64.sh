@@ -38,10 +38,10 @@ cat repositories.conf
 # Run make info to obtain a list of defined profiles.
 make info
 make info | grep -A 5 GLINET
-cat target/linux/ar71xx/generic/profiles/gl-connect.mk 
+cat target/linux/ar71xx/generic/profiles/gl-connect.mk
 
 # PACKAGES variable specifies a list of packages to include and/or exclude when building an image with Image Generator.
-# FILES variable allows custom configuration files to be included in images built with Image Generator. 
+# FILES variable allows custom configuration files to be included in images built with Image Generator.
 # This is especially useful if you need to change the network configuration from default before flashing.
 
 # Make initial try image
