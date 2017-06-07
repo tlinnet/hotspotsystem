@@ -23,8 +23,43 @@ mk4g() {
         uci set firewall.@zone[1].network='wan wan2 wan6'
         uci commit firewall
         /etc/init.d/firewall restart
+
+        # Inspect
+        #cat /sys/kernel/debug/usb/devices
+        #grep -B 3 -A 20 "HUAWEI" /sys/kernel/debug/usb/devices
+
+        #T:  Bus=01 Lev=01 Prnt=01 Port=00 Cnt=01 Dev#=  3 Spd=480  MxCh= 0
+        #D:  Ver= 2.10 Cls=02(comm.) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
+        #P:  Vendor=12d1 ProdID=14dc Rev= 1.02
+        #S:  Manufacturer=HUAWEI_MOBILE
+        #S:  Product=HUAWEI_MOBILE
+        #C:* #Ifs= 3 Cfg#= 1 Atr=80 MxPwr=  2mA
+        #I:* If#= 0 Alt= 0 #EPs= 1 Cls=02(comm.) Sub=06 Prot=00 Driver=cdc_ether
+        #E:  Ad=83(I) Atr=03(Int.) MxPS=  16 Ivl=2ms
+        #I:* If#= 1 Alt= 0 #EPs= 2 Cls=0a(data ) Sub=06 Prot=00 Driver=cdc_ether
+        #E:  Ad=82(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+        #E:  Ad=02(O) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+        #I:* If#= 2 Alt= 0 #EPs= 2 Cls=08(stor.) Sub=06 Prot=50 Driver=(none)
+        #E:  Ad=84(I) Atr=02(Bulk) MxPS= 512 Ivl=0ms
+        #E:  Ad=03(O) Atr=02(Bulk) MxPS= 512 Ivl=125us
+
+        #dmesg | grep cdc_ether
+        #[   14.450000] usbcore: registered new interface driver cdc_ether
+        #[   25.630000] cdc_ether 1-1:1.0 eth2: register 'cdc_ether' at usb-ehci-platform-1, CDC Ethernet Device, 0c:5b:8f:27:9a:64
+        #[   28.360000] cdc_ether 1-1:1.0 eth2: kevent 12 may have been dropped
+
+        #lsmod | grep usb
+
+        # Try other driver:  https://forum.openwrt.org/viewtopic.php?id=55691
+        #opkg update && opkg install kmod-usb-net-huawei-cdc-ncm
+        # Does not work
+
+        # Try https://wiki.openwrt.org/doc/recipes/ethernetoverusb_rndis
+        #opkg update && opkg install kmod-usb-net-rndis usb-modeswitch
+        # Does not work
+
     else
-        echo -e "\nSkipping"  
+        echo -e "\nSkipping"
     fi
 
 }
@@ -52,7 +87,7 @@ mksshwan() {
         uci commit firewall
         /etc/init.d/firewall restart
     else
-        echo -e "\nSkipping"   
+        echo -e "\nSkipping"
     fi
 }
 
@@ -84,7 +119,7 @@ mkpapertrail() {
         echo -e "uci set system.@system[0].log_port=$PAPERPORT"
         echo -e "uci set system.@system[0].log_ip=$PAPERIP"
     else
-        echo -e "\nSkipping" 
+        echo -e "\nSkipping"
     fi
 }
 
