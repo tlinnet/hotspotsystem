@@ -19,7 +19,8 @@ dorestart() {
 if [ "$ACTION" == "ifup" ]; then
     echo "ifup for $INTERFACE ($DEVICE)"
     logger -t chilli "ifup for $INTERFACE ($DEVICE)"
-    if printf "$INTERFACE" | grep -Eqe "^wan"; then
+    #if printf "$INTERFACE" | grep -Eqe "^wan"; then
+    if [ "$INTERFACE" == "wan1" ] || [ "$INTERFACE" == "wan2" ]; then
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         if [ "$PROCESSCOUNT" == "0" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
@@ -41,10 +42,8 @@ if [ "$ACTION" == "ifup" ]; then
 elif [ "$ACTION" == "ifdown" ]; then
     echo "ifdown for $INTERFACE ($DEVICE)"
     if printf "$INTERFACE" | grep -Eqe "^wan"; then
-        if [ "$WANUP" == "1" ] || [ "$WAN1UP" == "1" ] || [ "$WAN2UP" == "1" ]; then
-            if [ "$WANUP" == "1" ]; then
-                logger -t chilli "WANUP=$WANUP"
-            elif [ "$WAN1UP" == "1" ]; then
+        if [ "$WAN1UP" == "1" ] || [ "$WAN2UP" == "1" ]; then
+            if [ "$WAN1UP" == "1" ]; then
                 logger -t chilli "WAN1UP=$WAN1UP"
             elif [ "$WAN2UP" == "1" ]; then
                 logger -t chilli "WAN2UP=$WAN2UP"
@@ -53,7 +52,7 @@ elif [ "$ACTION" == "ifdown" ]; then
 
         else
             /etc/init.d/chilli stop
-            logger -t chilli "Neither wan, wan1 or wan2 up. Stopping chilli."
+            logger -t chilli "Neither wan1 or wan2 up. Stopping chilli."
         fi
     else
         logger -t chilli "$ACTION for $INTERFACE ($DEVICE). Chilli not changed."
