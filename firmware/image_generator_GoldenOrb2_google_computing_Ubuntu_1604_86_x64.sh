@@ -78,3 +78,9 @@ make
 # tmux a -t <name> # to session with name
 
 # When it's done the firmware will be in bin/targets/<target>/<subtarget>.
+
+# Copy to home, from home terminal
+# gcloud compute copy-files [INSTANCE_NAME]:[REMOTE_FILE_PATH] [LOCAL_FILE_PATH]
+# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-15.05.1-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-15.05.1-ar71xx-generic-gl-inet-6416A-v1-squashfs-factory.bin $HOME/Desktop
+# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-15.05.1-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-15.05.1-ar71xx-generic-gl-inet-6416A-v1-squashfs-sysupgrade.bin $HOME/Desktop
+# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin $HOME/Desktop
