@@ -74,7 +74,7 @@ mkpapertrail() {
         PAPERURL=${PAPERURL:-$DEFPAPERURL}
         echo -e "You entered: $PAPERURL"
 
-        PAPERIP=`nslookup $PAPERURL | grep -m 1 "Address" | cut -d":" -f2 | sed 's/#.*//' | cut -d" " -f2 | tr -d " \t"`
+        PAPERIP=`nslookup $PAPERURL | tail -n +3 | grep -m 1 "Address" | cut -d":" -f2 | sed 's/#.*//' | cut -d" " -f2 | tr -d " \t"`
         echo -e "\nWhen I do a nslookup, I translate the IP to: $PAPERIP"
 
         uci set system.@system[0].log_ip=$PAPERIP
