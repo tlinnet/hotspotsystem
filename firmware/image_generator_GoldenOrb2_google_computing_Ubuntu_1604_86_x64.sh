@@ -14,14 +14,27 @@ sudo apt-get update && sudo apt-get -y install subversion git gawk gettext ncurs
 # Get scripts for building
 cd $HOME
 
-#git clone -b v17.01.0 https://git.lede-project.org/source.git
-git clone -b v17.01.1 https://git.lede-project.org/source.git
+# Get GoldenOrb2 of ROOter
 wget http://ofmodemsandmen.com/download/goldenorb2.zip
 unzip goldenorb2.zip && rm goldenorb2.zip
 
-mv rooter/* source/package
-cd source
+# Get lede
+git clone https://git.lede-project.org/source.git lede
+cd lede
+# Get current tags
+git tag -l
+LATEST=`git tag -l | tail -n 1`
+echo "Latest tag is $LATEST"
+# Check out the latest branch
+git checkout tags/${LATEST} -b latest
+# See current branch
+git branch
 
+# Move packages from GoldenOrb2
+mv ../rooter/* package
+rmdir ../rooter
+
+# Update
 scripts/feeds update -a
 scripts/feeds install -a
 
@@ -48,9 +61,9 @@ make menuconfig
 # To check
 cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | head -n 20
 
-# Before building, we weill use screen, so we can close the connection and return later
-# http://aperiodic.net/screen/quick_reference
-screen -S build
+# Before building, we weill use tmux, so we can close the connection and return later
+# https://gist.github.com/henrik/1967800
+tmux new -s build
 
 # We now have to build. We can build with more CPU in Make
 lscpu
@@ -59,10 +72,11 @@ echo "Number of CPU is: ${CPU}"
 
 # Build, and then relax for several hours...
 make -j${CPU}
+# In mac, deetach from tmux by: Ctrl+b, then just, d
 
 # You can return into a screen by SSH, and then
-screen -ls #list running sessions/screens
-screen -x # attach to a running session
-screen -r <name> # … to session with name
+tmux ls #list running sessions/screens
+tmux a # attach to a running session
+tmux a -t <name> # to session with name
 
 # When it's done the firmware will be in bin/targets/<target>/<subtarget>.
