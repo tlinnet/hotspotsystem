@@ -65,18 +65,13 @@ cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | head -n 20
 # https://gist.github.com/henrik/1967800
 tmux new -s build
 
-# We now have to build. We can build with more CPU in Make
-lscpu
-CPU=`nproc`
-echo "Number of CPU is: ${CPU}"
-
 # Build, and then relax for several hours...
-make -j${CPU}
+make
 # In mac, deetach from tmux by: Ctrl+b, then just, d
 
-# You can return into a screen by SSH, and then
-tmux ls #list running sessions/screens
-tmux a # attach to a running session
-tmux a -t <name> # to session with name
+#### You can return into a screen by SSH, and then
+# tmux ls #list running sessions/screens
+# tmux a # attach to a running session
+# tmux a -t <name> # to session with name
 
 # When it's done the firmware will be in bin/targets/<target>/<subtarget>.
