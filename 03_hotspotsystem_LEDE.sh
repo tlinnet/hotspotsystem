@@ -78,14 +78,14 @@ mkchillihotplug() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         echo -e "\nCopying over script"
-        echo -e "cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
+        echo -e "cp 03_etc_hotplug_d_iface_30-chilli_LEDE /etc/hotplug.d/iface/30-chilli"
         # Copy over 30-chilli script
-        cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
+        cp 03_etc_hotplug_d_iface_30-chilli_LEDE /etc/hotplug.d/iface/30-chilli
 
         # Copy over 35-hotspotsystem_lan_dhcp script
         echo -e "cp 03_etc_hotplug_d_iface_35-hotspotsystem_lan_dhcp /etc/hotplug.d/iface/35-hotspotsystem_lan_dhcp"
         cp 03_etc_hotplug_d_iface_35-hotspotsystem_lan_dhcp /etc/hotplug.d/iface/35-hotspotsystem_lan_dhcp
-        #cp 03_etc_hotplug_d_iface_30-chilli_original /etc/hotplug.d/iface/30-chilli
+        #cp 03_etc_hotplug_d_iface_30-chilli_LEDE_original /etc/hotplug.d/iface/30-chilli
     else
         echo -e "\nSkipping"
     fi
@@ -233,7 +233,7 @@ mkchilliconf() {
         uci set chilli.@chilli[0].dhcpif="$DHCPIF"
 
         ## set DNS to whatever is fastest. On slow saturated lines, best use your local router for caching.
-        ## on fast & wide lines, use or Google or your ISP's dns, whichever is fastest 
+        ## on fast & wide lines, use or Google or your ISP's dns, whichever is fastest
         ## Will be suggested to the client. If omitted the system default will be used.
         ##uci set chilli.@chilli[0].dns1='8.8.8.8'
         ##uci set chilli.@chilli[0].dns2='8.8.4.4'
@@ -252,7 +252,7 @@ mkchilliconf() {
         # Setting DNS domain
         uci set chilli.@chilli[0].domain='key.chillispot.info'
 
-        ## Tunnel and Subnet 
+        ## Tunnel and Subnet
         ## Name of TUN device name. required.
         uci set chilli.@chilli[0].tundev='tun0'
         # For 1000 addresses. Default is 182/24 subnet
@@ -301,8 +301,8 @@ mkchilliconf() {
 
         ## Various debug and optimization values
         ## swap input and output octets
-        uci set chilli.@chilli[0].swapoctets='1'		
-        ## Re-read configuration file at this interval. Will also cause new domain name lookups to be performed. Value is given in seconds. Config file and host lookup refresh.     
+        uci set chilli.@chilli[0].swapoctets='1'
+        ## Re-read configuration file at this interval. Will also cause new domain name lookups to be performed. Value is given in seconds. Config file and host lookup refresh.
         uci set chilli.@chilli[0].interval='3600'
 
         ## Add the chilli firewall rules
