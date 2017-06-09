@@ -2,6 +2,15 @@
 # -*- coding: UTF-8 -*-
 # Script for deploying on Google Cloud Computing GCC
 
+
+
+##########################################################################
+# Make a computer with 16 CPUs
+# Make sure, that harddisk space is larger than 10 GB. Preferably 30 GB
+# Select an Ubuntu 16.04 LTS
+##########################################################################
+
+
 #####################################
 # From cmd of Google Cloud Instance.
 #####################################
@@ -69,7 +78,15 @@ cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | head -n 20
 tmux new -s build
 
 # Build, and then relax for several hours...
-make
+# We now have to build. We can build with more CPU in Make
+lscpu
+CPU=`nproc`
+echo "Number of CPU is: ${CPU}"
+
+# Build, and then relax for several hours...
+make -j${CPU}
+#make
+
 # In mac, deetach from tmux by: Ctrl+b, then just, d
 
 #### You can return into a screen by SSH, and then
@@ -78,9 +95,10 @@ make
 # tmux a -t <name> # to session with name
 
 # When it's done the firmware will be in bin/targets/<target>/<subtarget>.
+# ls -la ./bin/targets/
 
 # Copy to home, from home terminal
 # gcloud compute copy-files [INSTANCE_NAME]:[REMOTE_FILE_PATH] [LOCAL_FILE_PATH]
-# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-15.05.1-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-15.05.1-ar71xx-generic-gl-inet-6416A-v1-squashfs-factory.bin $HOME/Desktop
-# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-15.05.1-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-15.05.1-ar71xx-generic-gl-inet-6416A-v1-squashfs-sysupgrade.bin $HOME/Desktop
-# gcloud compute copy-files buildopenwrt:/home/${USER}/OpenWrt-ImageBuilder-ar71xx-generic.Linux-x86_64/bin/ar71xx/openwrt-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin $HOME/Desktop
+# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin $HOME/Desktop
+# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ipq806x/generic/lede-ipq806x-EA8500-squashfs-factory.bin $HOME/Desktop
+# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ipq806x/generic/lede-ipq806x-EA8500-squashfs-sysupgrade.tar $HOME/Desktop
