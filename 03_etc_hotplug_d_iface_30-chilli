@@ -18,8 +18,15 @@ dorestart() {
 
 if [ "$ACTION" == "ifup" ]; then
     echo "ifup for $INTERFACE ($DEVICE)"
+    logger -t chilli "ifup for $INTERFACE ($DEVICE)"
     if printf "$INTERFACE" | grep -Eqe "^wan"; then
-        dorestart
+        PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+        if [ "$PROCESSCOUNT" == "0" ]; then
+            logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
+            dorestart
+        else
+            logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
+        fi
 
     elif [ "$INTERFACE" == "lan" ]; then
         ## Enable DHCP on LAN
@@ -27,7 +34,6 @@ if [ "$ACTION" == "ifup" ]; then
         uci set dhcp.lan.ignore='0'
         uci commit dhcp
         /etc/init.d/dnsmasq restart
-
     else
         logger -t chilli "Not starting chilli, since $INTERFACE is not wan"
     fi
