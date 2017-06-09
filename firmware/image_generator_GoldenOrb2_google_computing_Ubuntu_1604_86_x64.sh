@@ -41,6 +41,9 @@ scripts/feeds install -a
 #sed -i 's/luci-theme-bootstrap/luci-theme-rooter/' feeds/luci/collections/luci/Makefile
 sed -i 's/disabled=1/disabled=0/;s/ssid=LEDE/ssid=ROOter/' package/kernel/mac80211/files/lib/wifi/mac80211.sh
 
+# Now build.
+# See: https://lede-project.org/docs/guide-developer/use-buildsystem
+
 make defconfig
 make menuconfig
 #make dirclean
