@@ -14,7 +14,8 @@ sudo apt-get update && sudo apt-get -y install subversion git gawk gettext ncurs
 # Get scripts for building
 cd $HOME
 
-git clone -b v17.01.0 https://git.lede-project.org/source.git
+#git clone -b v17.01.0 https://git.lede-project.org/source.git
+git clone -b v17.01.1 https://git.lede-project.org/source.git
 wget http://ofmodemsandmen.com/download/goldenorb2.zip
 unzip goldenorb2.zip && rm goldenorb2.zip
 
@@ -42,7 +43,7 @@ make menuconfig
 #
 # Go down to:
 # ROOTer ->
-# With keayboard "y", select "ext-rooter16", this will automatically select "ext-rooter8"
+# With keayboard "y", select "ext-rooter8"
 # Now with arrows+enter select "Save", and save to .config
 # To check
 cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | head -n 20
