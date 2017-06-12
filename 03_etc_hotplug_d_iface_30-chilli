@@ -77,7 +77,7 @@ if [ "$ACTION" == "ifup" ]; then
         uci commit dhcp
         /etc/init.d/dnsmasq restart
     else
-        logger -t chilli "Not starting chilli, since $INTERFACE is $CHILLIINTERFACE"
+        logger -t chilli "Not starting chilli, since $INTERFACE is not $CHILLIWAN"
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
