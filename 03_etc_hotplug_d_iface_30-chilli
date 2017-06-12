@@ -14,8 +14,11 @@ fi
 
 # Get the chilli wan interface
 CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
+# Get if the interface is up
+CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
 # Get the chilli variable for the tun interface
 CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
+logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE"
 
 if [ "$ACTION" == "ifup" ]; then
     echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
