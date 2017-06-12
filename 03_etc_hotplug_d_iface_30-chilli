@@ -8,7 +8,7 @@ CHILLIDISABLED=`uci get chilli_hotplug.@chilli[0].disabled`
 # If variable does not exist, enable by default
 if [ -z "$CHILLIDISABLED" ]; then CHILLIDISABLED=0; fi
 if [ "$CHILLIDISABLED" == "1" ]; then
-    logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli"
+    logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
     exit 0
 fi
 
