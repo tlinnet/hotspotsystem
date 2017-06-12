@@ -38,7 +38,6 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
 
             # Sleep for 3 seconds
-            /bin/sleep 3
             /etc/init.d/chilli start
         else
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
