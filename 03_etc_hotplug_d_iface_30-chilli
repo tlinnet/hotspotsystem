@@ -12,12 +12,6 @@ if [ "$CHILLIDISABLED" == "1" ]; then
     exit 0
 fi
 
-# Make function to start chilli
-dorestart() {
-    # Now restart
-    /etc/init.d/chilli restart
-}
-
 # Get the chilli wan interface
 CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 # Get the chilli variable for the tun interface
@@ -42,7 +36,7 @@ if [ "$ACTION" == "ifup" ]; then
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         if [ "$PROCESSCOUNT" == "0" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
-            dorestart
+            /etc/init.d/chilli start
         else
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
@@ -70,7 +64,7 @@ if [ "$ACTION" == "ifup" ]; then
         uci commit dhcp
         /etc/init.d/dnsmasq restart
     else
-        logger -t chilli "Not starting chilli, since $INTERFACE is not wan1 or wan2"
+        logger -t chilli "Not starting chilli, since $INTERFACE is $CHILLIINTERFACE""
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
