@@ -16,8 +16,6 @@ fi
 CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 # Get the chilli variable for the tun interface
 CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
-# Should DHCP be disabled for LAN?
-CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
 
 if [ "$ACTION" == "ifup" ]; then
     echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
@@ -45,21 +43,24 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
 
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
-        logger -t chilli "TUN $CHILLIINTERFACE interface is up."
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+        logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
 
-        dhcp_lan_ignore
-        if [ "$PROCESSCOUNT" == "0" ]; then
-            logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
-        else
-            logger -t chilli "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
-            logger -t chilli "Setting dhcp.lan.ignore='1'"
+        # Should DHCP be disabled for LAN?
+        CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
+        if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
+            if [ "$PROCESSCOUNT" == "0" ]; then
+                logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
+            else
+                logger -t chilli "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
+                logger -t chilli "Setting dhcp.lan.ignore='1'"
 
-            ## Disable DHCP on LAN
-            uci set dhcp.lan.ignore='1'
-            uci commit dhcp
-            /etc/init.d/dnsmasq restart
+                ## Disable DHCP on LAN
+                uci set dhcp.lan.ignore='1'
+                uci commit dhcp
+                /etc/init.d/dnsmasq restart
+            fi
         fi
 
     # The lan interface should boot first, so we reset
