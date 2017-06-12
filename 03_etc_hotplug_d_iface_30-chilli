@@ -16,6 +16,8 @@ fi
 CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 # Get the chilli variable for the tun interface
 CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
+# Should DHCP be disabled for LAN?
+CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
 
 if [ "$ACTION" == "ifup" ]; then
     echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
@@ -43,9 +45,11 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
 
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
         logger -t chilli "TUN $CHILLIINTERFACE interface is up."
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+
+        dhcp_lan_ignore
         if [ "$PROCESSCOUNT" == "0" ]; then
             logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
         else
@@ -66,7 +70,7 @@ if [ "$ACTION" == "ifup" ]; then
         uci commit dhcp
         /etc/init.d/dnsmasq restart
     else
-        logger -t chilli "Not starting chilli, since $INTERFACE is $CHILLIINTERFACE""
+        logger -t chilli "Not starting chilli, since $INTERFACE is $CHILLIINTERFACE"
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
@@ -79,7 +83,8 @@ elif [ "$ACTION" == "ifdown" ]; then
         # Bringing down the tun interface
         ifdown $CHILLIINTERFACE
 
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+    #elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
          ## Enable DHCP on LAN
         logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
         uci set dhcp.lan.ignore='0'

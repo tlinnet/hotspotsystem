@@ -312,6 +312,9 @@ mkchilliconf() {
         # Make a variable for the tun interface
         uci set chilli_hotplug.@chilli[0].interface="hotspotsystem"
 
+        # Default: Do not disable dhcp.lan.ignore
+        uci set chilli_hotplug.@chilli[0].dhcp_lan_ignore="0"
+
         ## Finish
         uci commit chilli_hotplug
 
