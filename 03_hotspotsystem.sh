@@ -325,7 +325,7 @@ mkchilliconf() {
 
         echo -e "\nYou can now try:"
         echo -e "ACTION=ifup"
-        echo -e "INTERFACE=`uci get chilli.@chilli[0].wan`"
+        echo -e "INTERFACE=`uci get chilli_hotplug.@chilli[0].wan`"
         echo -e "source /etc/hotplug.d/iface/30-chilli"
 
         echo -e "\nCheck if it works with these commands"
