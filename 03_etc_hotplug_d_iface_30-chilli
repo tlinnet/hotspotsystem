@@ -9,16 +9,18 @@ CHILLIDISABLED=`uci get chilli_hotplug.@chilli[0].disabled`
 if [ -z "$CHILLIDISABLED" ]; then CHILLIDISABLED=0; fi
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
+
+    # Get the chilli wan interface
+    CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
+    # Get if the interface is up
+    CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
+    # Get the chilli variable for the tun interface
+    CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
+    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE"
+
+    # Exit
     exit 0
 fi
-
-# Get the chilli wan interface
-CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
-# Get if the interface is up
-CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
-# Get the chilli variable for the tun interface
-CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
-logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE"
 
 if [ "$ACTION" == "ifup" ]; then
     echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
