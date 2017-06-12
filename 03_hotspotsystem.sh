@@ -78,10 +78,10 @@ mkchillihotplug() {
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
         echo -e "\nLinking script"
-        echo -e "ln -s /etc/hotplug.d/iface/30-chilli $PWD/03_etc_hotplug_d_iface_30-chilli"
+        echo -e "ln -s $PWD/03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
         # Copy over 30-chilli script
         rm /etc/hotplug.d/iface/30-chilli
-        ln -s /etc/hotplug.d/iface/30-chilli $PWD/03_etc_hotplug_d_iface_30-chilli
+        ln -s $PWD/03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
 
     else
         echo -e "\nSkipping"
