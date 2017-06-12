@@ -16,6 +16,8 @@ CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
 CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
 # Should DHCP be disabled for LAN?
 CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
+# Should firewall be enabled for wan?
+WANFIREWALLENABLED=`uci get chilli_hotplug.@chilli[0].wan_firewall_enabled`
 
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
@@ -55,6 +57,17 @@ if [ "$ACTION" == "ifup" ]; then
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
 
+        if [ "$WANFIREWALLENABLED" == 1 ]; then
+            CHILLINET=`uci get chilli.@chilli[0].net`
+            CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
+            CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
+            CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
+            # Makre firewall rule
+            echo "iptables -I FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
+            logger -t firewall "iptables -I FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
+            iptables -I FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
+        fi
+
         if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
             if [ "$PROCESSCOUNT" == "0" ]; then
                 logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
@@ -90,17 +103,30 @@ elif [ "$ACTION" == "ifdown" ]; then
         # Bringing down the tun interface
         ifdown $CHILLIINTERFACE
 
-    #elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
-         ## Enable DHCP on LAN
-        logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
-        uci set dhcp.lan.ignore='0'
-        uci commit dhcp
-        /etc/init.d/dnsmasq restart
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
 
-        # Stop chilli
-        /etc/init.d/chilli stop
-        logger -t chilli "Stopping chilli."
+        if [ "$WANFIREWALLENABLED" == 1 ]; then
+            CHILLINET=`uci get chilli.@chilli[0].net`
+            CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
+            CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
+            CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
+            # Makre firewall rule
+            echo "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
+            logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
+            iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
+        fi
+
+        if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
+            ## Enable DHCP on LAN
+            logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
+            uci set dhcp.lan.ignore='0'
+            uci commit dhcp
+            /etc/init.d/dnsmasq restart
+
+            # Stop chilli
+            /etc/init.d/chilli stop
+            logger -t chilli "Stopping chilli."
+        fi
 
     else
         logger -t chilli "$ACTION for $INTERFACE ($DEVICE). Chilli not changed."
