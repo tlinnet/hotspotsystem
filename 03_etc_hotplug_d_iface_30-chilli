@@ -14,17 +14,19 @@ CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
 # Get the chilli variable for the tun interface
 CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
+# Should DHCP be disabled for LAN?
+CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
 
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
-    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE. $ACTION $INTERFACE ($DEVICE)"
+    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE, CHILLIDHCPLANIGNORE=$CHILLIDHCPLANIGNORE. $ACTION $INTERFACE ($DEVICE)"
 
     # Exit
     exit 0
 fi
 
 if [ "$ACTION" == "ifup" ]; then
-    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE."
+    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE, CHILLIDHCPLANIGNORE=$CHILLIDHCPLANIGNORE."
     logger -t chilli "ifup for $INTERFACE ($DEVICE)"
     #if printf "$INTERFACE" | grep -Eqe "^wan"; then
     if [ "$INTERFACE" == "$CHILLIWAN" ] && [ "$CHILLIWANUP" == "1" ]; then
@@ -53,8 +55,6 @@ if [ "$ACTION" == "ifup" ]; then
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
 
-        # Should DHCP be disabled for LAN?
-        CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
         if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
             if [ "$PROCESSCOUNT" == "0" ]; then
                 logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
@@ -70,7 +70,7 @@ if [ "$ACTION" == "ifup" ]; then
         fi
 
     # The lan interface should boot first, so we reset
-    elif [ "$INTERFACE" == "lan" ]; then
+    elif [ "$INTERFACE" == "lan" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
         ## Enable DHCP on LAN
         logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
         uci set dhcp.lan.ignore='0'
