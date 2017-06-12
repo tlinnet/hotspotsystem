@@ -299,7 +299,7 @@ mkchilliconf() {
         uci add chilli_hotplug chilli
 
         # Enable chilli hotplug
-        uci set chilli_hotplug.@chilli[0].disabled='0'
+        uci set chilli_hotplug.@chilli[0].disabled='1'
 
         # Enable the wan to wait for ifup
         DEFWAN="wan1"
