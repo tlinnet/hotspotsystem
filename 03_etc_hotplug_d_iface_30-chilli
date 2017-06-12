@@ -7,15 +7,16 @@ if [ "$ACTION" != "ifup" ] && [ "$ACTION" != "ifdown" ]; then exit 0; fi
 CHILLIDISABLED=`uci get chilli_hotplug.@chilli[0].disabled`
 # If variable does not exist, enable by default
 if [ -z "$CHILLIDISABLED" ]; then CHILLIDISABLED=0; fi
+
+# Get the chilli wan interface
+CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
+# Get if the interface is up
+CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
+# Get the chilli variable for the tun interface
+CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
+
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
-
-    # Get the chilli wan interface
-    CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
-    # Get if the interface is up
-    CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
-    # Get the chilli variable for the tun interface
-    CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
     logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE. $ACTION $INTERFACE ($DEVICE)"
 
     # Exit
@@ -26,7 +27,7 @@ if [ "$ACTION" == "ifup" ]; then
     echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE."
     logger -t chilli "ifup for $INTERFACE ($DEVICE)"
     #if printf "$INTERFACE" | grep -Eqe "^wan"; then
-    if [ "$INTERFACE" == "$CHILLIWAN" ]; then
+    if [ "$INTERFACE" == "$CHILLIWAN" ] && [ "$CHILLIWANUP" == "1" ]; then
         # Make the TUN DEVICE
         if [ -z "$CHILLIINTERFACE" ]; then CHILLIINTERFACE=hotspotsystem; fi
         HOTTUN=`uci get chilli.@chilli[0].tundev`
