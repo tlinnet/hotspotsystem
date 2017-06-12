@@ -102,13 +102,10 @@ mkchilliconf() {
         cp /etc/config/chilli /etc/config/chilli_default
         uci show chilli > old_uci_chilli
 
-        #
+        # Make the config for chilli
         echo "" > /etc/config/chilli
         # The config HAS to be chilli. Or else it won't work!
         uci add chilli chilli
-
-        # Enable chilli
-        uci set chilli.@chilli[0].disabled='0'
 
         DEFOPERATOR=my_hotspotsystem_com_login_name
         read -p "What is your login name to hotspotsystem.com? [$DEFOPERATOR]:" OPERATOR
@@ -207,13 +204,6 @@ mkchilliconf() {
         echo "uci set chilli.@chilli[0].dhcpif=$DHCPIF"
         uci set chilli.@chilli[0].dhcpif="$DHCPIF"
 
-        DEFWAN="wan1"
-        read -p "What is the interface WAN for the hotspot connection? [$DEFWAN]:" WAN
-        WAN=${WAN:-$DEFWAN}
-        echo -e "You entered: $WAN"
-        echo "uci set chilli.@chilli[0].wan=$WAN"
-        uci set chilli.@chilli[0].wan="$WAN"
-
         ## set DNS to whatever is fastest. On slow saturated lines, best use your local router for caching.
         ## on fast & wide lines, use or Google or your ISP's dns, whichever is fastest
         ## Will be suggested to the client. If omitted the system default will be used.
@@ -242,9 +232,6 @@ mkchilliconf() {
         echo -e "You entered: $TUNDEV"
         echo "uci set chilli.@chilli[0].tundev=$TUNDEV"
         uci set chilli.@chilli[0].tundev="$TUNDEV"
-
-        # Make a variable for the tun interface
-        uci set chilli.@chilli[0].interface="hotspotsystem"
 
         # For 1000 addresses. Default is 182/24 subnet
         uci set chilli.@chilli[0].net='192.168.180.0/22'
@@ -306,6 +293,29 @@ mkchilliconf() {
         ## Finish
         uci commit chilli
 
+        ###########################
+        # Make the config for chilli hotplug_hotplug
+        echo "" > /etc/config/chilli_hotplug
+        uci add chilli_hotplug chilli
+
+        # Enable chilli hotplug
+        uci set chilli_hotplug.@chilli[0].disabled='0'
+
+        # Enable the wan to wait for ifup
+        DEFWAN="wan1"
+        read -p "What is the interface WAN for the hotspot connection? [$DEFWAN]:" WAN
+        WAN=${WAN:-$DEFWAN}
+        echo -e "You entered: $WAN"
+        echo "uci set chilli_hotplug.@chilli[0].wan=$WAN"
+        uci set chilli_hotplug.@chilli[0].wan="$WAN"
+
+        # Make a variable for the tun interface
+        uci set chilli_hotplug.@chilli[0].interface="hotspotsystem"
+
+        ## Finish
+        uci commit chilli_hotplug
+
+        ###########################
         echo -e "\nNOTE: You should NOT do: /etc/init.d/chilli enable"
         echo -e "\nThere is a default hotplug script in /etc/hotplug.d/iface/30-chilli"
         cat /etc/hotplug.d/iface/30-chilli
@@ -314,9 +324,9 @@ mkchilliconf() {
         echo -e "This will disable the hotplug event."
 
         echo -e "\nYou can now try:"
-        echo -e "\nACTION=ifup"
-        echo -e "\nINTERFACE=`uci get chilli.@chilli[0].wan`"
-        echo -e "\n./etc/hotplug.d/iface/30-chilli"
+        echo -e "ACTION=ifup"
+        echo -e "INTERFACE=`uci get chilli.@chilli[0].wan`"
+        echo -e "source /etc/hotplug.d/iface/30-chilli"
 
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
@@ -336,7 +346,7 @@ mkinterface() {
     PERFORM=${PERFORM:-$DEFPERFORM}
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
-        HOTINTERFACE=`uci get chilli.@chilli[0].interface`
+        HOTINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
         if [ -z "$HOTINTERFACE" ]; then HOTINTERFACE=hotspotsystem; fi
         HOTTUN=`uci get chilli.@chilli[0].tundev`
         if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
