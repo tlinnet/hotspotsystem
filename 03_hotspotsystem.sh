@@ -69,7 +69,7 @@ mkchillihotplug() {
     cat /etc/hotplug.d/iface/30-chilli
 
     echo -e "\nWe are going to replace it with a little more intelligent script."
-    echo -e "Taking care of both wan and wan2. You can always unplug your connection to the wan and wan2, to reach the router."
+    echo -e "You can always unplug your connection to the wan, to reach the router."
     echo -e "This will disable the hotplug event."
 
     unset PERFORM
@@ -77,37 +77,12 @@ mkchillihotplug() {
     PERFORM=${PERFORM:-$DEFPERFORM}
     echo -e "You entered: $PERFORM"
     if [ "$PERFORM" == "y" ]; then
-        echo -e "\nCopying over script"
-        echo -e "cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli"
+        echo -e "\nLinking script"
+        echo -e "ln -s /etc/hotplug.d/iface/30-chilli $PWD/03_etc_hotplug_d_iface_30-chilli"
         # Copy over 30-chilli script
-        cp 03_etc_hotplug_d_iface_30-chilli /etc/hotplug.d/iface/30-chilli
+        rm /etc/hotplug.d/iface/30-chilli
+        ln -s /etc/hotplug.d/iface/30-chilli $PWD/03_etc_hotplug_d_iface_30-chilli
 
-        # Copy over 35-hotspotsystem_lan_dhcp script
-        echo -e "cp 03_etc_hotplug_d_iface_35-hotspotsystem_lan_dhcp /etc/hotplug.d/iface/35-hotspotsystem_lan_dhcp"
-        cp 03_etc_hotplug_d_iface_35-hotspotsystem_lan_dhcp /etc/hotplug.d/iface/35-hotspotsystem_lan_dhcp
-    else
-        echo -e "\nSkipping"
-    fi
-}
-
-mkinterface() {
-    echo -e "\nWe are going to make an interface 'hotspotsystem' for the 'tun0' device"
-
-    unset PERFORM
-    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
-    PERFORM=${PERFORM:-$DEFPERFORM}
-    echo -e "You entered: $PERFORM"
-    if [ "$PERFORM" == "y" ]; then
-        HOTNETWORK=hotspotsystem
-        HOTTUN=tun0
-
-        uci show network
-        uci set network.${HOTNETWORK}=interface
-        uci set network.${HOTNETWORK}.proto='none'
-        uci set network.${HOTNETWORK}.ifname="$HOTTUN"
-        uci set network.${HOTNETWORK}.auto='1'
-        uci commit network
-        uci show network
     else
         echo -e "\nSkipping"
     fi
@@ -124,6 +99,7 @@ mkchilliconf() {
         echo "Your current settings are:"
         uci show chilli
         # Make backup
+        cp /etc/config/chilli /etc/config/chilli_default
         uci show chilli > old_uci_chilli
 
         #
@@ -131,8 +107,8 @@ mkchilliconf() {
         # The config HAS to be chilli. Or else it won't work!
         uci add chilli chilli
 
-        # If line disabled is present, chilli is disabled.
-        uci set chilli.@chilli[0].disabled='1'
+        # Enable chilli
+        uci set chilli.@chilli[0].disabled='0'
 
         DEFOPERATOR=my_hotspotsystem_com_login_name
         read -p "What is your login name to hotspotsystem.com? [$DEFOPERATOR]:" OPERATOR
@@ -231,6 +207,13 @@ mkchilliconf() {
         echo "uci set chilli.@chilli[0].dhcpif=$DHCPIF"
         uci set chilli.@chilli[0].dhcpif="$DHCPIF"
 
+        DEFWAN="wan1"
+        read -p "What is the interface WAN for the hotspot connection? [$DEFWAN]:" WAN
+        WAN=${WAN:-$DEFWAN}
+        echo -e "You entered: $WAN"
+        echo "uci set chilli.@chilli[0].wan=$WAN"
+        uci set chilli.@chilli[0].wan="$WAN"
+
         ## set DNS to whatever is fastest. On slow saturated lines, best use your local router for caching.
         ## on fast & wide lines, use or Google or your ISP's dns, whichever is fastest
         ## Will be suggested to the client. If omitted the system default will be used.
@@ -253,7 +236,16 @@ mkchilliconf() {
 
         ## Tunnel and Subnet
         ## Name of TUN device name. required.
-        uci set chilli.@chilli[0].tundev='tun0'
+        DEFTUNDEV="tun0"
+        read -p "What is the TUN device name for the hotspot? [$DEFTUNDEV]:" TUNDEV
+        TUNDEV=${TUNDEV:-$DEFTUNDEV}
+        echo -e "You entered: $TUNDEV"
+        echo "uci set chilli.@chilli[0].tundev=$TUNDEV"
+        uci set chilli.@chilli[0].tundev="$TUNDEV"
+
+        # Make a variable for the tun interface
+        uci set chilli.@chilli[0].interface="hotspotsystem"
+
         # For 1000 addresses. Default is 182/24 subnet
         uci set chilli.@chilli[0].net='192.168.180.0/22'
         ## keep it at 182.1 despite the 180/22 subnet
@@ -314,19 +306,17 @@ mkchilliconf() {
         ## Finish
         uci commit chilli
 
-        echo -e "\nThe line 'option disabled '0' in '/etc/config/chilli' is not allowed at all!"
-        sed -i 's/option disabled/#option disabled/g' /etc/config/chilli
-        uci show chilli
-
-        echo -e "\nNOTE: You do NOT have to do: /etc/init.d/chilli enable"
+        echo -e "\nNOTE: You should NOT do: /etc/init.d/chilli enable"
         echo -e "\nThere is a default hotplug script in /etc/hotplug.d/iface/30-chilli"
         cat /etc/hotplug.d/iface/30-chilli
 
-        echo -e "\nYou can always unplug your connections to the wan and wan2, to reach the router."
+        echo -e "\nYou can always unplug your connections to the wan, to reach the router."
         echo -e "This will disable the hotplug event."
 
-        echo -e "\nNow trying: /etc/init.d/chilli start"
-        /etc/init.d/chilli start
+        echo -e "\nYou can now try:"
+        echo -e "\nACTION=ifup"
+        echo -e "\nINTERFACE=`uci get chilli.@chilli[0].wan`"
+        echo -e "\n./etc/hotplug.d/iface/30-chilli"
 
         echo -e "\nCheck if it works with these commands"
         echo -e "logread"
@@ -338,10 +328,35 @@ mkchilliconf() {
     fi
 }
 
+mkinterface() {
+    echo -e "\nWe are going to make an interface 'hotspotsystem' for the 'tun0' device"
+
+    unset PERFORM
+    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
+    PERFORM=${PERFORM:-$DEFPERFORM}
+    echo -e "You entered: $PERFORM"
+    if [ "$PERFORM" == "y" ]; then
+        HOTINTERFACE=`uci get chilli.@chilli[0].interface`
+        if [ -z "$HOTINTERFACE" ]; then HOTINTERFACE=hotspotsystem; fi
+        HOTTUN=`uci get chilli.@chilli[0].tundev`
+        if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
+
+        uci show network
+        uci set network.${HOTINTERFACE}=interface
+        uci set network.${HOTINTERFACE}.proto='none'
+        uci set network.${HOTINTERFACE}.ifname="$HOTTUN"
+        uci set network.${HOTINTERFACE}.auto='1'
+        uci commit network
+        uci show network
+    else
+        echo -e "\nSkipping"
+    fi
+}
+
 # Perform
 mkchilli
 #mkfixdate
 mkfixnetstate
 mkchillihotplug
-mkinterface
 mkchilliconf
+#mkinterface

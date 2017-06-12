@@ -1,26 +1,44 @@
 #!/bin/sh
 
-WANIF=`uci -P /var/state -q get network.wan.ifname`
-WANUP=`uci -P /var/state -q get network.wan.up`
-WAN1IF=`uci -P /var/state -q get network.wan1.ifname`
-WAN1UP=`uci -P /var/state -q get network.wan1.up`
-WAN2IF=`uci -P /var/state -q get network.wan2.ifname`
-WAN2UP=`uci -P /var/state -q get network.wan2.up`
-if [ -z "$WANUP" ]; then WANUP=0; fi
-if [ -z "$WAN1UP" ]; then WAN1UP=0; fi
-if [ -z "$WAN2UP" ]; then WAN2UP=0; fi
-logger -t chilli "Chilli hotplug due to $ACTION of $INTERFACE ($DEVICE). WAN=${WANIF},${WANUP} WAN1=${WAN1IF},${WAN1UP} WAN2=${WAN2IF},${WAN2UP}"
+# If action is different from ifup and ifdown, then exit
+if [ "$ACTION" != "ifup" ] && [ "$ACTION" != "ifdown" ]; then exit 0; fi
 
+# Check if chilli is disabled, if True, then exit
+CHILLIDISABLED=`uci get chilli.@chilli[0].disabled`
+# If variable does not exist, enable by default
+if [ -z "$CHILLIDISABLED" ]; then CHILLIDISABLED=0; fi
+if [ "$CHILLIDISABLED" == "1" ]; then
+    logger -t chilli "Chilli is disabled, uci get chilli.@chilli[0].disabled, will not start chilli"
+    exit 0
+fi
+
+# Make function to start chilli
 dorestart() {
     # Now restart
     /etc/init.d/chilli restart
 }
 
+# Get the chilli wan interface
+CHILLIWAN=`uci get chilli.@chilli[0].wan`
+# Get the chilli variable for the tun interface
+CHILLIINTERFACE=`uci get chilli.@chilli[0].interface`
+
 if [ "$ACTION" == "ifup" ]; then
-    echo "ifup for $INTERFACE ($DEVICE)"
+    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
     logger -t chilli "ifup for $INTERFACE ($DEVICE)"
     #if printf "$INTERFACE" | grep -Eqe "^wan"; then
-    if [ "$INTERFACE" == "wan1" ] || [ "$INTERFACE" == "wan2" ]; then
+    if [ "$INTERFACE" == "$CHILLIWAN" ]; then
+        # Make the TUN DEVICE
+        if [ -z "$CHILLIINTERFACE" ]; then CHILLIINTERFACE=hotspotsystem; fi
+        HOTTUN=`uci get chilli.@chilli[0].tundev`
+        if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
+        uci set network.${CHILLIINTERFACE}=interface
+        uci set network.${CHILLIINTERFACE}.proto='none'
+        uci set network.${CHILLIINTERFACE}.ifname="$HOTTUN"
+        uci set network.${CHILLIINTERFACE}.auto='1'
+        uci commit network
+
+        # Then count number of processes
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         if [ "$PROCESSCOUNT" == "0" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
@@ -29,6 +47,22 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
 
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+        logger -t chilli "TUN $CHILLIINTERFACE interface is up."
+        PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+        if [ "$PROCESSCOUNT" == "0" ]; then
+            logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
+        else
+            logger -t chilli "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
+            logger -t chilli "Setting dhcp.lan.ignore='1'"
+
+            ## Disable DHCP on LAN
+            uci set dhcp.lan.ignore='1'
+            uci commit dhcp
+            /etc/init.d/dnsmasq restart
+        fi
+
+    # The lan interface should boot first, so we reset
     elif [ "$INTERFACE" == "lan" ]; then
         ## Enable DHCP on LAN
         logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
@@ -40,25 +74,27 @@ if [ "$ACTION" == "ifup" ]; then
     fi
 
 elif [ "$ACTION" == "ifdown" ]; then
-    echo "ifdown for $INTERFACE ($DEVICE)"
-    if printf "$INTERFACE" | grep -Eqe "^wan"; then
-        if [ "$WAN1UP" == "1" ] || [ "$WAN2UP" == "1" ]; then
-            if [ "$WAN1UP" == "1" ]; then
-                logger -t chilli "WAN1UP=$WAN1UP"
-            elif [ "$WAN2UP" == "1" ]; then
-                logger -t chilli "WAN2UP=$WAN2UP"
-            fi
-            dorestart
+    echo "Chilli hotplug ifdown for $INTERFACE ($DEVICE)"
+    logger -t chilli "ifdown for $INTERFACE ($DEVICE)"
+    if [ "$INTERFACE" == "$CHILLIWAN" ]; then
+        /etc/init.d/chilli stop
+        logger -t chilli "Stopping chilli."
 
-        else
-            /etc/init.d/chilli stop
-            logger -t chilli "Neither wan1 or wan2 up. Stopping chilli."
-        fi
+        # Bringing down the tun interface
+        ifdown $CHILLIINTERFACE
+
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+         ## Enable DHCP on LAN
+        logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
+        uci set dhcp.lan.ignore='0'
+        uci commit dhcp
+        /etc/init.d/dnsmasq restart
+
+        # Stop chilli
+        /etc/init.d/chilli stop
+        logger -t chilli "Stopping chilli."
+
     else
         logger -t chilli "$ACTION for $INTERFACE ($DEVICE). Chilli not changed."
     fi
-
-else
-    echo "$ACTION for $INTERFACE ($DEVICE)"
-    logger -t chilli "Unknown: $ACTION for $INTERFACE ($DEVICE)"
 fi
