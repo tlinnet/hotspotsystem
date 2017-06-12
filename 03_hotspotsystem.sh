@@ -344,35 +344,9 @@ mkchilliconf() {
     fi
 }
 
-mkinterface() {
-    echo -e "\nWe are going to make an interface 'hotspotsystem' for the 'tun0' device"
-
-    unset PERFORM
-    read -p "Should I perform this? [$DEFPERFORM]:" PERFORM
-    PERFORM=${PERFORM:-$DEFPERFORM}
-    echo -e "You entered: $PERFORM"
-    if [ "$PERFORM" == "y" ]; then
-        HOTINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
-        if [ -z "$HOTINTERFACE" ]; then HOTINTERFACE=hotspotsystem; fi
-        HOTTUN=`uci get chilli.@chilli[0].tundev`
-        if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
-
-        uci show network
-        uci set network.${HOTINTERFACE}=interface
-        uci set network.${HOTINTERFACE}.proto='none'
-        uci set network.${HOTINTERFACE}.ifname="$HOTTUN"
-        uci set network.${HOTINTERFACE}.auto='1'
-        uci commit network
-        uci show network
-    else
-        echo -e "\nSkipping"
-    fi
-}
-
 # Perform
 mkchilli
 #mkfixdate
 mkfixnetstate
 mkchillihotplug
 mkchilliconf
-#mkinterface
