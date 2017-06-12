@@ -23,7 +23,7 @@ if [ "$CHILLIDISABLED" == "1" ]; then
 fi
 
 if [ "$ACTION" == "ifup" ]; then
-    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE)"
+    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE."
     logger -t chilli "ifup for $INTERFACE ($DEVICE)"
     #if printf "$INTERFACE" | grep -Eqe "^wan"; then
     if [ "$INTERFACE" == "$CHILLIWAN" ]; then
