@@ -16,7 +16,7 @@ if [ "$CHILLIDISABLED" == "1" ]; then
     CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
     # Get the chilli variable for the tun interface
     CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
-    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE"
+    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE. $ACTION $INTERFACE ($DEVICE)"
 
     # Exit
     exit 0
