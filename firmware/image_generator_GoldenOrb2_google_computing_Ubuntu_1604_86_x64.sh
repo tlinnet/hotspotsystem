@@ -55,17 +55,8 @@ scripts/feeds update -a
 scripts/feeds install -a
 
 #sed -i 's/luci-theme-bootstrap/luci-theme-rooter/' feeds/luci/collections/luci/Makefile
-#sed -i 's/disabled=1/disabled=0/;s/ssid=LEDE/ssid=ROOter/' package/kernel/mac80211/files/lib/wifi/mac80211.sh
-# Enable wifi by default and set SSID to ROOter
-sed -i \
-    -e 's@option disabled 1@#option disabled 1@g' \
-    -e 's@option ssid     OpenWrt@option ssid     ROOter@g' \
- ./package/kernel/mac80211/files/lib/wifi/mac80211.sh
-
-sed -i \
-    -e 's@option disabled 1@#option disabled 1@g' \
-    -e 's@option ssid     OpenWrt${i#0}@option ssid     ROOter${i#0}@g' \
- ./package/kernel/broadcom-wl/files/lib/wifi/broadcom.sh
+sed -i 's/disabled=1/disabled=0/' package/kernel/mac80211/files/lib/wifi/mac80211.sh
+sed -i 's/disabled=1/disabled=0/' package/kernel/broadcom-wl/files/lib/wifi/broadcom.sh
 
 # Now build.
 # See: https://lede-project.org/docs/guide-developer/use-buildsystem
