@@ -89,6 +89,7 @@ make menuconfig
 # Now with arrows+enter select "Save", and save to .config
 # To check
 cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | head -n 20
+cat .config | grep -v -e '^[[:space:]]*$' -e '^#' | grep ext-
 
 # Before building, we weill use tmux, so we can close the connection and return later
 # https://gist.github.com/henrik/1967800
@@ -112,10 +113,8 @@ make -j${CPU}
 # tmux a -t <name> # to session with name
 
 # When it's done the firmware will be in bin/targets/<target>/<subtarget>.
-# ls -la ./bin/targets/
+ls -la ./bin/targets/ar71xx/generic/ | grep .bin
 
 # Copy to home, from home terminal
 # gcloud compute copy-files [INSTANCE_NAME]:[REMOTE_FILE_PATH] [LOCAL_FILE_PATH]
-# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ar71xx/generic/lede-ar71xx-generic-gl-ar150-squashfs-sysupgrade.bin $HOME/Desktop
-# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ipq806x/generic/lede-ipq806x-EA8500-squashfs-factory.bin $HOME/Desktop
-# gcloud compute copy-files go2fast:/home/${USER}/lede/bin/targets/ipq806x/generic/lede-ipq806x-EA8500-squashfs-sysupgrade.tar $HOME/Desktop
+echo "gcloud compute copy-files ${HOSTNAME}:/home/${USER}/lede/bin/targets \${HOME}/Desktop"
