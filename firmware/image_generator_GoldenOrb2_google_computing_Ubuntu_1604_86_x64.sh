@@ -27,6 +27,9 @@ cd $HOME
 wget http://ofmodemsandmen.com/download/goldenorb2.zip
 unzip goldenorb2.zip && rm goldenorb2.zip
 
+# Get own Package
+git clone --depth=1 https://github.com/tlinnet/hotspotsystem.git
+
 # Get lede
 git clone https://git.lede-project.org/source.git lede
 cd lede
@@ -42,6 +45,10 @@ git branch
 # Move packages from GoldenOrb2
 mv ../rooter/* package
 rmdir ../rooter
+
+# Mv packages from hotspotsystem.git
+mv ../hotspotsystem/firmware/ext-* package
+rm -rf ../hotspotsystem
 
 # Update
 scripts/feeds update -a
