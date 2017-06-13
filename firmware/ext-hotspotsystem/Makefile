@@ -14,7 +14,7 @@ define Package/ext-hotspotsystem
   SECTION:=utils
   CATEGORY:=ROOter
   SUBMENU:=Optional Applications
-  DEPENDS:=+git +git-http +curl +wget +nano +ca-bundle +diffutils +grep \
+  DEPENDS:=+git +git-http +curl +wget +nano +ca-bundle +grep \
  	    +coova-chilli +kmod-tun
   TITLE:=Install packages for hotspotsystem
   PKGARCH:=all
