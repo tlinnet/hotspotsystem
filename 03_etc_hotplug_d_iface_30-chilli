@@ -43,7 +43,7 @@ if [ "$ACTION" == "ifup" ]; then
         fi
 
         # First delete the firewall rule
-        sed -i '/iptables -I FORWARD 1 -s /d' /etc/firewall.user
+        sed -i '/iptables -I FORWARD 1 -s /d' /etc/chilli/up.sh
 
         if [ "$WANFIREWALLENABLED" == 1 ]; then
             # Makre firewall rule. Add it as the very first rule with the notion: 1.
@@ -51,7 +51,7 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t firewall "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             #iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
             # Add it to firewall user file
-            echo "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT" >> /etc/firewall.user
+            echo "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT" >> /etc/chilli/up.sh
         fi
 
     else
