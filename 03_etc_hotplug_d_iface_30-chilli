@@ -14,6 +14,11 @@ CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
 # Should firewall be enabled for wan?
 WANFIREWALLENABLED=`uci get chilli_hotplug.@chilli[0].wan_firewall_enabled`
+# Get the net
+CHILLINET=`uci get chilli.@chilli[0].net`
+CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
+CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
+CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
 
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
@@ -37,15 +42,16 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
 
+        # First delete the firewall rule
+        sed -i '/iptables -I FORWARD 1 -s /d' /etc/firewall.user
+
         if [ "$WANFIREWALLENABLED" == 1 ]; then
-            CHILLINET=`uci get chilli.@chilli[0].net`
-            CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
-            CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
-            CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
             # Makre firewall rule. Add it as the very first rule with the notion: 1.
             echo "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             logger -t firewall "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
-            iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
+            #iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
+            # Add it to firewall user file
+            echo "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT" >> /etc/firewall.user
         fi
 
     else
@@ -60,10 +66,6 @@ elif [ "$ACTION" == "ifdown" ]; then
         logger -t chilli "Stopping chilli."
 
         if [ "$WANFIREWALLENABLED" == 1 ]; then
-            CHILLINET=`uci get chilli.@chilli[0].net`
-            CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
-            CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
-            CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
             # Makre firewall rule
             echo "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
