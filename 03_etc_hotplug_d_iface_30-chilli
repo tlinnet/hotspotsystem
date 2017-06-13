@@ -36,11 +36,11 @@ if [ "$ACTION" == "ifup" ]; then
         if [ -z "$CHILLIINTERFACE" ]; then CHILLIINTERFACE=hotspotsystem; fi
         HOTTUN=`uci get chilli.@chilli[0].tundev`
         if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
-        uci set network.${CHILLIINTERFACE}=interface
-        uci set network.${CHILLIINTERFACE}.proto='none'
-        uci set network.${CHILLIINTERFACE}.ifname="$HOTTUN"
-        uci set network.${CHILLIINTERFACE}.auto='1'
-        uci commit network
+        #uci set network.${CHILLIINTERFACE}=interface
+        #uci set network.${CHILLIINTERFACE}.proto='none'
+        #uci set network.${CHILLIINTERFACE}.ifname="$HOTTUN"
+        #uci set network.${CHILLIINTERFACE}.auto='1'
+        #uci commit network
 
         # Then count number of processes
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
