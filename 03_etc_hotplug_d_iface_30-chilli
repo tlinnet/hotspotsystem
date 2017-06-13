@@ -53,10 +53,6 @@ if [ "$ACTION" == "ifup" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
         fi
 
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
-        PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
-        logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
-
         if [ "$WANFIREWALLENABLED" == 1 ]; then
             CHILLINET=`uci get chilli.@chilli[0].net`
             CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
@@ -68,6 +64,9 @@ if [ "$ACTION" == "ifup" ]; then
             iptables -I FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
         fi
 
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+        PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
+        logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
         if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
             if [ "$PROCESSCOUNT" == "0" ]; then
                 logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
@@ -101,9 +100,7 @@ elif [ "$ACTION" == "ifdown" ]; then
         logger -t chilli "Stopping chilli."
 
         # Bringing down the tun interface
-        ifdown $CHILLIINTERFACE
-
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
+        #ifdown $CHILLIINTERFACE
 
         if [ "$WANFIREWALLENABLED" == 1 ]; then
             CHILLINET=`uci get chilli.@chilli[0].net`
@@ -116,6 +113,7 @@ elif [ "$ACTION" == "ifdown" ]; then
             iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
         fi
 
+    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
         if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
             ## Enable DHCP on LAN
             logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
