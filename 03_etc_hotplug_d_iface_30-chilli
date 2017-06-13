@@ -12,42 +12,26 @@ if [ -z "$CHILLIDISABLED" ]; then CHILLIDISABLED=0; fi
 CHILLIWAN=`uci get chilli_hotplug.@chilli[0].wan`
 # Get if the interface is up
 CHILLIWANUP=`uci -P /var/state get network.${CHILLIWAN}.up`
-# Get the chilli variable for the tun interface
-CHILLIINTERFACE=`uci get chilli_hotplug.@chilli[0].interface`
-# Should DHCP be disabled for LAN?
-CHILLIDHCPLANIGNORE=`uci get chilli_hotplug.@chilli[0].dhcp_lan_ignore`
 # Should firewall be enabled for wan?
 WANFIREWALLENABLED=`uci get chilli_hotplug.@chilli[0].wan_firewall_enabled`
 
 if [ "$CHILLIDISABLED" == "1" ]; then
     logger -t chilli "Chilli is disabled, uci get chilli_hotplug.@chilli[0].disabled, will not start chilli. $ACTION $INTERFACE ($DEVICE)"
-    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE, CHILLIDHCPLANIGNORE=$CHILLIDHCPLANIGNORE. $ACTION $INTERFACE ($DEVICE)"
-
+    logger -t chilli "CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, WANFIREWALLENABLED=$WANFIREWALLENABLED. $ACTION $INTERFACE ($DEVICE)"
     # Exit
     exit 0
 fi
 
 if [ "$ACTION" == "ifup" ]; then
-    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE, CHILLIDHCPLANIGNORE=$CHILLIDHCPLANIGNORE."
-    logger -t chilli "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, CHILLIINTERFACE=$CHILLIINTERFACE, CHILLIDHCPLANIGNORE=$CHILLIDHCPLANIGNORE."
+    echo "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, WANFIREWALLENABLED=$WANFIREWALLENABLED."
+    logger -t chilli "Chilli hotplug ifup for $INTERFACE ($DEVICE). CHILLIWAN=$CHILLIWAN, CHILLIWANUP=$CHILLIWANUP, WANFIREWALLENABLED=$WANFIREWALLENABLED."
     #if printf "$INTERFACE" | grep -Eqe "^wan"; then
     if [ "$INTERFACE" == "$CHILLIWAN" ] && [ "$CHILLIWANUP" == "1" ]; then
-        # Make the TUN DEVICE
-        if [ -z "$CHILLIINTERFACE" ]; then CHILLIINTERFACE=hotspotsystem; fi
-        HOTTUN=`uci get chilli.@chilli[0].tundev`
-        if [ -z "$HOTTUN" ]; then HOTTUN=tun0; fi
-        #uci set network.${CHILLIINTERFACE}=interface
-        #uci set network.${CHILLIINTERFACE}.proto='none'
-        #uci set network.${CHILLIINTERFACE}.ifname="$HOTTUN"
-        #uci set network.${CHILLIINTERFACE}.auto='1'
-        #uci commit network
 
         # Then count number of processes
         PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
         if [ "$PROCESSCOUNT" == "0" ]; then
             logger -t chilli "ifup for $INTERFACE ($DEVICE). No chilli deamon is running, so I will start it."
-
-            # Sleep for 3 seconds
             /etc/init.d/chilli restart
         else
             logger -t chilli "ifup for $INTERFACE ($DEVICE). Chilli deamon is already running, so I will NOT start it."
@@ -58,36 +42,12 @@ if [ "$ACTION" == "ifup" ]; then
             CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
             CHILLIWANNET=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f2 | cut -d" " -f1`
             CHILLIWANMASK=`ifconfig $CHILLIWANDEV | grep Mask | cut -d":" -f4`
-            # Makre firewall rule
+            # Makre firewall rule. Add it as the very first rule with the notion: 1.
             echo "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             logger -t firewall "iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             iptables -I FORWARD 1 -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
         fi
 
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
-        PROCESSCOUNT=`ps -w | grep -v grep | grep -cw chilli`
-        logger -t chilli "TUN $CHILLIINTERFACE interface is up. Chilli deamon is running with nr of processes: $PROCESSCOUNT"
-        if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
-            if [ "$PROCESSCOUNT" == "0" ]; then
-                logger -t chilli "No chilli deamon is running! I will not make any changes to DHCP server."
-            else
-                logger -t chilli "Chilli deamon is running with nr of processes: $PROCESSCOUNT"
-                logger -t chilli "Setting dhcp.lan.ignore='1'"
-
-                ## Disable DHCP on LAN
-                uci set dhcp.lan.ignore='1'
-                uci commit dhcp
-                /etc/init.d/dnsmasq restart
-            fi
-        fi
-
-    # The lan interface should boot first, so we reset
-    elif [ "$INTERFACE" == "lan" ] && [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
-        ## Enable DHCP on LAN
-        logger -t chilli "Starting $INTERFACE, and setting dhcp.lan.ignore='0'"
-        uci set dhcp.lan.ignore='0'
-        uci commit dhcp
-        /etc/init.d/dnsmasq restart
     else
         logger -t chilli "Not starting chilli, since $INTERFACE is not $CHILLIWAN"
     fi
@@ -99,9 +59,6 @@ elif [ "$ACTION" == "ifdown" ]; then
         /etc/init.d/chilli stop
         logger -t chilli "Stopping chilli."
 
-        # Bringing down the tun interface
-        #ifdown $CHILLIINTERFACE
-
         if [ "$WANFIREWALLENABLED" == 1 ]; then
             CHILLINET=`uci get chilli.@chilli[0].net`
             CHILLIWANDEV=`uci -P /var/state get network.${CHILLIWAN}.device`
@@ -111,19 +68,6 @@ elif [ "$ACTION" == "ifdown" ]; then
             echo "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             logger -t firewall "iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT"
             iptables -D FORWARD -s ${CHILLINET} -d ${CHILLIWANNET}/${CHILLIWANMASK} -j REJECT
-        fi
-
-    elif [ "$INTERFACE" == "$CHILLIINTERFACE" ]; then
-        if [ "$CHILLIDHCPLANIGNORE" == 1 ]; then
-            ## Enable DHCP on LAN
-            logger -t chilli "TUN $CHILLIINTERFACE is down, setting dhcp.lan.ignore='0'"
-            uci set dhcp.lan.ignore='0'
-            uci commit dhcp
-            /etc/init.d/dnsmasq restart
-
-            # Stop chilli
-            /etc/init.d/chilli stop
-            logger -t chilli "Stopping chilli."
         fi
 
     else
